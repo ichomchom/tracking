@@ -19,8 +19,8 @@ const CHARS_CFG = [
   { emoji: '\u{1F1EB}\u{1F1F7}', color: '#0055A4' }
 ];
 
-const COLORS = ['#06d6a0','#ffd166','#ef476f','#118ab2','#073b4c','#e63946','#457b9d','#f4a261','#2a9d8f','#e9c46a','#264653','#6a0dad'];
-const EMOJIS = ['\u{1F4AF}','\u{1FAC6}','\u{1F4DD}','\u{1F438}','\u{1f47b}','\u{1F921}','\u{1f480}','\u{1F525}','\u{26A1}','\u{1f9e0}','\u{1F608}','\u{1F941}','\u{1F43A}'];
+const COLORS = ['#06d6a0', '#ffd166', '#ef476f', '#118ab2', '#073b4c', '#e63946', '#457b9d', '#f4a261', '#2a9d8f', '#e9c46a', '#264653', '#6a0dad'];
+const EMOJIS = ['\u{1F4AF}', '\u{1FAC6}', '\u{1F4DD}', '\u{1F438}', '\u{1f47b}', '\u{1F921}', '\u{1f480}', '\u{1F525}', '\u{26A1}', '\u{1f9e0}', '\u{1F608}', '\u{1F941}', '\u{1F43A}'];
 
 const TOAST_MSGS = {
   visitEnd: [
@@ -91,17 +91,17 @@ function buildRoast(totalTimeMs) {
   var mins = totalTimeMs / 60000;
   if (mins > 1500) return '\u{1F480} This is cohabitation now. Register as partners.';
   if (mins > 1000) return '\u{1F3E0} New Bae set up an Airbnb with your name on it.';
-  if (mins > 600)  return '\u{1F48D} The ring vendor knows you by first name already.';
-  if (mins > 400)  return '\u{1F4E6} You have a DRAWER in her office. For what?!';
-  if (mins > 250)  return '\u{1F37C} Someone ordered matching comforters and everything.';
-  if (mins > 150)  return '\u{1F633} Her desk chair has your fingerprints on both armrests.';
-  if (mins > 100)  return '\u{1F4B8} She started saving screenshots NOW for EVICTION. \u{1f62d}';
-  if (mins > 70)   return '\u{1F6A8} The fire marshal called. They are concerned about you.';
-  if (mins > 45)   return '\u{23F0} You have aged 3 entire business years standing up.';
-  if (mins > 25)   return '\u{1F9CA} Check for a pulse under that desk furniture.';
-  if (mins > 15)   return '\u{1F928} HR started taking notes. With ACTUAL concern.';
-  if (mins > 8)    return '\u{1F62C} The intern noticed you already. Slack gossip time.';
-  if (mins > 4)    return '\u{1F99F} Casual visit. Professionals, right?';
+  if (mins > 600) return '\u{1F48D} The ring vendor knows you by first name already.';
+  if (mins > 400) return '\u{1F4E6} You have a DRAWER in her office. For what?!';
+  if (mins > 250) return '\u{1F37C} Someone ordered matching comforters and everything.';
+  if (mins > 150) return '\u{1F633} Her desk chair has your fingerprints on both armrests.';
+  if (mins > 100) return '\u{1F4B8} She started saving screenshots NOW for EVICTION. \u{1f62d}';
+  if (mins > 70) return '\u{1F6A8} The fire marshal called. They are concerned about you.';
+  if (mins > 45) return '\u{23F0} You have aged 3 entire business years standing up.';
+  if (mins > 25) return '\u{1F9CA} Check for a pulse under that desk furniture.';
+  if (mins > 15) return '\u{1F928} HR started taking notes. With ACTUAL concern.';
+  if (mins > 8) return '\u{1F62C} The intern noticed you already. Slack gossip time.';
+  if (mins > 4) return '\u{1F99F} Casual visit. Professionals, right?';
   return '\u{1FAA8}\uFE0F Still learning the printer, huh? Proud of you!';
 }
 
@@ -127,14 +127,14 @@ function buildStreak(visitsForChar) {
 
 function buildTier(totalMs) {
   var m = Math.floor(totalMs / 60000);  // minutes of total visit time for this character
-  if (m >= 480)   return { label: 'THE WEDDING PLANNER', emoji: '\u{1F470}', color: '#e53935' };
-  if (m >= 300)   return { label: 'HAS THEIR OWN KEYCARD NOW', emoji: '\ud83d\udd11', color: '#c77dff' };
-  if (m >= 180)   return { label: 'NEVER LEAVES HER SIDE AGAIN', emoji: '\u{1F4AC}', color: '#ffd54f' };
-  if (m >= 90)    return { label: 'COLLECTING STUFF FOR A ROOM OF THEIRS', emoji: '\ud83d\ude07', color: '#ffb74d' };
-  if (m >= 45)    return { label: 'KNOWN AS "DESK-MATE" (NOT CO-WORKER)', emoji: '\u{1F60E}', color: '#7b2d8e' };
-  if (m >= 20)    return { label: 'STALKER', emoji: '\U0001f440', color: '#90005e' };
-  if (m >= 10)    return { label: 'HOVERER', emoji: '\u{1F60E}', color: '#c77dff' };
-  return { label: 'THE SUSPECT', emoji: '\U0001f575\ufe0f', color: '#8338ec' };
+  if (m >= 480) return { label: 'THE WEDDING PLANNER', emoji: '👰', color: '#e53935' };
+  if (m >= 300) return { label: 'HAS THEIR OWN KEYCARD NOW', emoji: '🎁', color: '#c77dff' };
+  if (m >= 180) return { label: 'NEVER LEAVES HER SIDE AGAIN', emoji: '💬', color: '#ffd54f' };
+  if (m >= 90) return { label: 'COLLECTING STUFF FOR A ROOM OF THEIRS', emoji: '😇', color: '#ffb74d' };
+  if (m >= 45) return { label: 'KNOWN AS "DESK-MATE" (NOT CO-WORKER)', emoji: '🤧', color: '#7b2d8e' };
+  if (m >= 20) return { label: 'STALKER', emoji: '👀', color: '#90005e' };
+  if (m >= 10) return { label: 'HOVERER', emoji: '🙎', color: '#c77dff' };
+  return { label: 'THE SUSPECT', emoji: '🕵️', color: '#8338ec' };
 }
 
 /* ---- RENDER CHARACTERS ---- */
@@ -496,7 +496,7 @@ async function removeCharacter(charId) {
   var chName = ''; for (var i = 0; i < characters.length; i++) { if (characters[i].id === charId) { chName = characters[i].name; break; } }
   delete activeTimers[charId];
 
-  try { await deleteDoc(doc(db, 'characters', charId)); } catch (e) {}
+  try { await deleteDoc(doc(db, 'characters', charId)); } catch (e) { }
 
   characters = characters.filter(function (c) { return c.id !== charId; });
 
@@ -512,7 +512,7 @@ async function removeCharacter(charId) {
 async function deleteVisit(visitId) {
   try {
     await deleteDoc(doc(db, 'visits', visitId));
-  } catch (e) {}
+  } catch (e) { }
   showToast('One piece of evidence erased. Rumors remain.');
 }
 
@@ -560,7 +560,7 @@ $vb.addEventListener('click', function (e) {
 
 document.getElementById('clear-visits-btn').addEventListener('click', async function () {
   if (!confirm('Burn ALL evidence? This cannot be undone! \u{1F525}')) return;
-  for (var i = 0; i < visits.length; i++) { try { await deleteDoc(doc(db, 'visits', visits[i].id)); } catch (e) {} }
+  for (var i = 0; i < visits.length; i++) { try { await deleteDoc(doc(db, 'visits', visits[i].id)); } catch (e) { } }
 });
 
 /* ---- LIVE TIMER TICKER ---- */
