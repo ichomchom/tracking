@@ -235,9 +235,8 @@ function renderCharacters() {
       const charVisits = visits.filter(v => v.characterId === ch.id);
       const totalT = charVisits.reduce((sum, v) => sum + (v.duration || 0), 0);
       const runEl = card.querySelector('.running-stat');
-        if (runEl) {
-          runEl.textContent = `Total visits: ${charVisits.length} · Stolen time: ${formatDuration(totalT)}`;
-        }
+      if (runEl) {
+        runEl.textContent = `Total visits: ${charVisits.length} · Stolen time: ${formatDuration(totalT)}`;
       }
 
       // Update streak
@@ -731,43 +730,52 @@ async function init() {
     }
   }, 1000);
 
-  // Wait for onSnapshot to settle, then check Firestore
-  setTimeout(async () => {
-    try {
-      const snap = await getDocs(collection(db, 'characters'));
-      console.log('✅ Firestore got', snap.size, 'documents');
-    } catch (err) {
-      console.error('❌ Firebase error:', err);
-      showFallbackError(
-        'Could not connect to Firebase.<br>' +
-        '<strong>Check your browser console (F12) for details.</strong><br><br>' +
-        'This usually means Firestore Rules need to allow unauthenticated access.<br>' +
-        'Paste this into <a href="https://console.firebase.google.com/project/test-cd485/firestore/rules" target="_blank">Firestore Rules page</a>:<br>' +
-        '<code style="display:block;background:#0f0c29;padding:0.5rem;border-radius:6px;margin-top:0.3rem;word-break:break-all;">allow read, write: if true;</code><br>'+
-        '...or just click "Load Without Firebase" below.'
-      );
-    }
-  }, 2000);
+  // Wait for onSnapshot listeners to register before we try to write
+  await new Promise(r => setTimeout(r, 500));
 
-  // If no characters exist yet, auto-add the preset hunters
+  // Try reading characters from Firestore — if collection doesn't exist yet, just create directly
   try {
     const snap = await getDocs(collection(db, 'characters'));
+    console.log(`✅ Firestore: ${snap.size} documents found`);
+    
     if (snap.empty) {
+      // Create presets directly — no need to read first since we know it's empty
       for (const cfg of CHARACTERS_CONFIG.slice()) {
-        const docSnap = await addDoc(collection(db, 'characters'), {
+        await addDoc(collection(db, 'characters'), {
           name: cfg.emoji === '🌑' ? 'The Ex-Hunter 🌑' :
                 cfg.emoji === '🇫🇷' ? 'Le Français 🍷',
           emoji: cfg.emoji,
           color: cfg.color,
         });
-        console.log('Created character:', docSnap.id);
       }
       fancyToast('🎭 Welcome to <strong>New Bae Watch</strong>. The suspects are in position.<br><em>Time to find out who\'s really dedicated.</em>', 'drama');
     } else {
-      console.log(`Loaded ${snap.docs.length} characters from Firestore`);
+      console.log(`${snap.size} characters already exist — using existing data`);
     }
   } catch (err) {
-    console.error('Initial data Firebase error:', err.message || err);
+    // Collection might not exist yet, or rules error — just create directly
+    console.warn('Could not read collection, creating presets directly:', err.message || err);
+    for (const cfg of CHARACTERS_CONFIG.slice()) {
+      try {
+        await addDoc(collection(db, 'characters'), {
+          name: cfg.emoji === '🌑' ? 'The Ex-Hunter 🌑' :
+                cfg.emoji === '🇫🇷' ? 'Le Français 🍷',
+          emoji: cfg.emoji,
+          color: cfg.color,
+        });
+      } catch (writeErr) {
+        console.error('Failed to create preset:', writeErr.message || writeErr);
+        showFallbackError(
+          'Cannot connect to Firebase Firestore.<br><strong>Action needed:</strong><br>' +
+          '1. Go to <a href="https://console.firebase.google.com/project/tracking-3535d/firestore/rules" target="_blank">Firestore → Rules</a><br>' +
+          '2. Make sure it says <code>allow read, write: if true;</code><br>' +
+          '3. Click Publish (takes ~60 seconds to propagate)<br>' +
+          '4. Refresh this page<br><br>' +
+          'In the meantime, click below to run locally.'
+        );
+        return; // Don't proceed further
+      }
+    }
   }
 }
 
