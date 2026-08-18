@@ -3,53 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🕵️ Who Visits Who — Office Spy Tracker</title>
+<title>New Bae Watch ⏰ — How Long Can She Survive?</title>
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 </head>
 <body>
 
+<div class="glitch-bg"></div>
+
 <header>
-  <h1>🕵️ OPERATION: SPY & VISIT 🕶️</h1>
-  <p class="subtitle">Tracking The Ex-Hunter & Le Français as they "visit" New Bae 👀</p>
+  <h1 class="main-title">New Bae Watch ⏰😳</h1>
+  <p class="subtitle">A competitive intelligence operation targeting The New Hire 👗💼</p>
+  <div class="marquee-bar">⚠️ SUSPECTS ARE ARMED WITH EMOTIONAL DAMAGE AND BAD DECISIONS — EXPOSED LIVE AT ALL HOURS ⚠️</div>
 </header>
 
 <!-- Add Character -->
 <section id="add-character-section">
-  <h2>+ Add New Character</h2>
+  <h2>+ Deploy New Spy 🕴️</h2>
   <form id="add-character-form">
-    <input type="text" id="char-name-input" placeholder="Character name..." required autocomplete="off">
-    <button type="submit">Add Fighter 🥊</button>
+    <input type="text" id="char-name-input" placeholder="Name of the suspect..." required autocomplete="off">
+    <button type="submit">Add To The Watchlist 🚨</button>
   </form>
 </section>
 
 <!-- Active Characters / Timer Section -->
 <section id="timer-section">
-  <h2>⏱ LIVE — Who's Visiting Now?</h2>
+  <h2>🔴 LIVE SUSPECT ACTIVITY — WHO'S CREEPING NOW?</h2>
   <div id="characters-grid" class="cards-grid"></div>
-  <p id="no-characters-msg" class="empty-msg">Add characters above to start the spy game! 🕶️</p>
+  <p id="no-characters-msg" class="empty-msg">The suspects are hiding... add them above and start surveillance 🕶️</p>
 </section>
 
 <!-- Stats Dashboard -->
 <section id="stats-section">
-  <h2>🏆 The Truth Hurts — Rankings</h2>
+  <h2>👑 Official Suspect Rankings — The Shame Is Real</h2>
   <div id="rankings-grid" class="cards-grid"></div>
 </section>
 
 <!-- Chart Section -->
 <section id="charts-section">
-  <h2>📊 Charts — Because Numbers Don't Lie (or do they?)</h2>
+  <h2>📈 The Irrefutable Evidence (Charts That Will Ruin You)</h2>
   <div class="charts-container">
     <div class="chart-box">
-      <h3>Total Time Spent Per Character</h3>
+      <h3>Total Time Wasted in Her Proximity</h3>
       <canvas id="barChart"></canvas>
     </div>
     <div class="chart-box">
-      <h3>Visit Count Over Time (by Day)</h3>
+      <h3>Crimes Against Free Space Per Day</h3>
       <canvas id="lineChart"></canvas>
     </div>
     <div class="chart-box">
-      <h3>Who's Dominating?</h3>
+      <h3>% of Her Time Actually Owned by Each Pervert</h3>
       <canvas id="donutChart"></canvas>
     </div>
   </div>
@@ -57,32 +60,33 @@
 
 <!-- Visits Log -->
 <section id="visits-section">
-  <h2>📋 Visits Log — The Dirt is Out</h2>
+  <h2>📜 The Incriminating Evidence — Complete Visit History</h2>
   <div class="visits-controls">
-    <label>Show:</label>
+    <label>I want to see:</label>
     <select id="filter-char">
-      <option value="all">All Characters</option>
+      <option value="all">All Suspects</option>
     </select>
-    <button id="clear-visits-btn" title="Delete all visits">🗑 Clear All Visits</button>
+    <button id="clear-visits-btn" title="Burn all evidence">🔥 Destroy All Evidence</button>
   </div>
   <table id="visits-table">
     <thead>
       <tr>
         <th>#</th>
-        <th>Character</th>
-        <th>Started At</th>
-        <th>Ended At</th>
-        <th>Duration</th>
+        <th>Suspect</th>
+        <th>Incrimination Time</th>
+        <th>Caught At</th>
+        <th>Time Spent Being Suspicious</th>
         <th>Action</th>
       </tr>
     </thead>
     <tbody id="visits-body"></tbody>
   </table>
-  <p id="no-visits-msg" class="empty-msg">No visits recorded yet. Let the stalking begin. 🏃‍♂️💨</p>
+  <p id="no-visits-msg" class="empty-msg">No evidence yet. The suspects are biding their time... 🧐</p>
 </section>
 
 <footer>
-  <p>Made with 💀 and zero professionalism • New Bae is not participating, she's just trying to work</p>
+  <p>Made with 💀, zero professionalism & questionable life choices</p>
+  <p>New Bae did not consent to this dashboard. She also doesn't know it exists (yet).</p>
   <p id="total-visit-count"></p>
 </footer>
 

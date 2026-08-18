@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-analytics.js";
-import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, updateDoc, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBxpJov1i6lCeTa813a6hk1ihHS7W2vKYA",
@@ -13,14 +13,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
-// analytics disabled — don't need it
-// const analytics = getAnalytics(app);
 const db = getFirestore(app);
 
 // --- Constants ---
 const CHARACTERS_CONFIG = [
-  { emoji: "🌑", color: "#4a4a4a" },      // The Ex-Hunter (dark shadow)
-  { emoji: "🇫🇷", color: "#0055A4" },     // Le Français (French flag blue)
+  { emoji: "🌑", color: "#4a4a4a" },          // The Ex-Hunter (dark shadow)
+  { emoji: "🇫🇷", color: "#0055A4" },         // Le Français (French flag blue)
 ];
 
 const AUTO_COLORS = [
@@ -28,11 +26,41 @@ const AUTO_COLORS = [
   "#457b9d","#f4a261","#2a9d8f","#e9c46a","#264653","#6a0dad"
 ];
 
-// --- State ---
-let characters = [];
-let visits = [];
-let activeTimers = {};
-let charts = { bar: null, line: null, donut: null };
+const CUSTOM_EMOJIS = ["🎭","🦊","🐸","👻","🤡","💀","🔥","⚡","🧠","😈","🦁","🐺"];
+
+// --- Meme Toast Messages ---
+const TOAST_MESSAGES = {
+  visitStart: [
+    "🚨 CODE RED — {{name}} has been spotted heading to her desk!!!",
+    "⚠️ ALERT: Suspect {{name}} is moving into position... Good luck, New Bae.",
+    "{{name}} just entered the building 🏃‍♂️💨 She can hear him already...",
+    "🫣 AHHH — {{name}} is going back there AGAIN. The audacity.",
+    "{{name}} must be on a mission... or an Uber to her desk 🗺️",
+    "NEW DEVELOPMENT: {{name}} has made their move! This is a documentary now.",
+  ],
+  visitEnd: [
+    "🚪 EXILE — {{name}} finally left after {{duration}} of pure chaos.",
+    "{{name}} has been released! Police reports filed by HR pending. 📝",
+    "{{name}} stopped visiting at {{date}}. We are NOT asking why they stopped. 😳",
+    "BREAKING: {{name}} survived the visit at an ALL-TIME LOW of {{duration}}. Shocking.",
+  ],
+  addChar: [
+    "{{emoji}} New suspect deployed to the operation! The conspiracy grows...",
+    "A new player enters the game... and it's not on TikTok 🎮",
+    "The surveillance network just expanded by one member. Trust no one. 🔍",
+    "{{name}} has been recruited. Welcome to Team Creep. 🫡",
+  ],
+  removeChar: [
+    "{{name}} has been discharged from the program (aka banned from her desk) 🚪",
+    "{{name}}? Gone. Vanished. Disappeared into the parking lot like usual. 👀",
+  ],
+  clearVisits: [
+    "🔥 OBLITERATED — All evidence destroyed. Cover your tracks, agents.",
+    "The files have been burned. Even Big Brother won't know what happened tonight. 🕯️",
+  ],
+};
+
+function randomFrom(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
 
 // --- Helpers ---
 function showToast(msg) {
@@ -42,7 +70,17 @@ function showToast(msg) {
   t.className = 'toast';
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => t.remove(), 3000);
+  setTimeout(() => t.remove(), 4000);
+}
+
+function fancyToast(msg, type = '') {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.innerHTML = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 4000);
 }
 
 function formatDuration(ms) {
@@ -64,22 +102,40 @@ function randomColor(idx) {
 }
 
 function getEmojiForChar(name, idx) {
-  const existing = CHARACTERS_CONFIG.find(c => c.emoji === name);
-  if (existing) return existing.emoji;
-  const customEmojis = ["🎭","🦊","🐸","👻","🤡","💀","🔥","⚡","🧠","😈"];
+  const customEmojis = CUSTOM_EMOJIS;
   return customEmojis[idx % customEmojis.length];
 }
 
+// --- ESCALATING ROASTS (based on total minutes spent) ---
 function getRoast(totalTime, totalVisits) {
   const mins = totalTime / 60000;
-  if (mins > 600) return "Rome wasn't built in a day... but this guy is trying to 😂";
-  if (mins > 300) return "Marriage counselor is on speed dial 📞💀";
-  if (mins > 120) return "At this point, the new hire has to pay rent 💸";
-  if (mins > 60) return "Someone call HR... or a priest 👨‍⛪";
-  if (mins > 30) return "Stalker vibes detected 🕵️‍♂️";
-  if (mins > 10) return "Casual visit. Respectable. 😎";
-  return "Still learning the printer location, huh? 🖨️😂";
+  if (mins > 1500) return "💀 This ain't a visit anymore, this is cohabitation. They should just register as domestic partners.";
+  if (mins > 1000) return "🏠 New Bae has set up an Airbnb listing with only your name on it now.";
+  if (mins > 600) return "💍 The ring vendor knows you by first name. Wedding dates are being discussed at the watercooler.";
+  if (mins > 400) return "📦 You have a drawer in her office. A DRAWER. For what?!";
+  if (mins > 250) return "🍱 Someone already ordered you matching company hoodies and everything.";
+  if (mins > 150) return "😳 New Bae's desk chair now has your fingerprints on both armrests.";
+  if (mins > 100) return "💸 She started saving screenshots of your messages. For EVICTION purposes...?";
+  if (mins > 70) return "🚨 The fire marshal noticed you don't leave and is now concerned for your wellbeing.";
+  if (mins > 45) return "⏰ You've aged 3 business years since standing up. Neck says hi btw.";
+  if (mins > 25) return "🧊 Someone should check if there's a pulse under all that desk furniture.";
+  if (mins > 15) return "🤨 At this point HR is starting to take notes with actual concern.";
+  if (mins > 8)  return "😬 The intern noticed. This is now official gossip in Slack #random.";
+  if (mins > 4)  return "🦟 Just a casual visit. Respectable. You're practically professionals at this point.";
+  return "🖨️ Still learning where the printer lives, huh? Grounds to keep. Proud of you!";
 }
+
+function getDailyRoast(totalMins) {
+  if (totalMins > 120) return "🏃‍♂️ If speed was everything, this person would be an Olympic athlete by now.";
+  if (totalMins > 60)  return "⚡ Speed record: they're collecting medals in other dimensions.";
+  return "💤 A quiet day. The suspects are resting for the main event tomorrow.";
+}
+
+// --- State ---
+let characters = [];
+let visits = [];
+let activeTimers = {};
+let charts = { bar: null, line: null, donut: null };
 
 // --- DOM References ---
 const $charGrid = document.getElementById('characters-grid');
@@ -92,7 +148,7 @@ const $visitsBody = document.getElementById('visits-body');
 const $noVisitsMsg = document.getElementById('no-visits-msg');
 const $totalVisitCount = document.getElementById('total-visit-count');
 
-// --- Render Functions ---
+// --- Character Card Rendering ---
 
 function renderCharacters() {
   if (characters.length === 0) {
@@ -102,16 +158,15 @@ function renderCharacters() {
   }
 
   $noCharMsg.style.display = 'none';
-  // Only re-render cards that don't exist yet (preserve live timer)
+
   const existingCardMap = new Map();
   $charGrid.querySelectorAll('.char-card').forEach(card => {
     const id = card.dataset.id;
     if (id) existingCardMap.set(id, card);
   });
 
-  let html = '';
   characters.forEach((ch, i) => {
-    const emoji = ch.emoji || CHARACTERS_CONFIG[i % CHARACTERS_CONFIG.length].emoji;
+    const emoji = ch.emoji || getEmojiForChar(ch.name, i);
     const color = ch.color || randomColor(i + CHARACTERS_CONFIG.length);
     const isActive = !!activeTimers[ch.id];
     const elapsed = isActive ? (Date.now() - activeTimers[ch.id]) : 0;
@@ -119,60 +174,114 @@ function renderCharacters() {
 
     if (!existingCardMap.has(ch.id)) {
       const card = document.createElement('div');
-      let cardClass = 'char-card';
-      if (ch.color === '#4a4a4a' || ch.color === '#333') cardClass += ' shadow-theme';
+      let themeClass = 'normal-theme';
+      if (color === '#4a4a4a' || color === '#333') themeClass = 'shadow-theme';
 
-      card.className = cardClass;
+      card.className = 'char-card ' + themeClass;
       card.dataset.id = ch.id;
-      card.style.borderColor = color + '44';
+      card.style.setProperty('--card-color', color);
+      card.style.borderColor = (!ch.color || ch.color === '#4a4a4a') ? '' : color + '44';
       card.innerHTML = `
+        <span class="status-badge">${isActive ? '🔴 ACTIVE' : '⚪ IDLE'}</span>
         <div class="emoji">${emoji}</div>
         <div class="name" style="color:${color}">${ch.name}</div>
-        <div class="running-stat">Total visits: 0 · Total time: 0m</div>
-        <div class="timer-display" id="timer-${ch.id}" style="color:${color}"></div>
+        <div class="card-label">— The Suspect —</div>
+        <div class="running-stat">Total visits: 0 · Stolen time: 0m</div>
+        <div class="timer-display" id="timer-${ch.id}" style="color:${color}">--:--:--</div>
         <button class="char-action-btn" data-id="${ch.id}" data-action="start"
-                style="background:${color}">▶ START VISIT</button>
+                style="background:${color || 'linear-gradient(135deg, #ff006e, #8338ec)'}">▶ START SUSPICIOUS ACTIVITY</button>
+        <div class="streak-info" id="streak-${ch.id}"></div>
         <div class="card-footer">
-          <button class="remove-btn" data-id="${ch.id}">✕ Remove</button>
+          <button class="remove-btn" data-id="${ch.id}">🗑 Discharge From Operation</button>
         </div>
       `;
       $charGrid.appendChild(card);
     } else {
-      // Update existing card
       const card = existingCardMap.get(ch.id);
+      const badge = card.querySelector('.status-badge');
       if (isActive) {
+        badge.className = 'status-badge is-active';
+        badge.textContent = '🔴 ACTIVE';
+
         const timerEl = document.getElementById(`timer-${ch.id}`);
         if (timerEl) timerEl.textContent = elapsedStr;
 
         const btn = card.querySelector('.char-action-btn');
         if (btn.dataset.action !== 'stop') {
-          btn.textContent = '⏹ STOP VISIT';
+          const funnyLabels = [
+            '⏹ STOP BEING SUSPICIOUS',
+            '🚪 PLEASE EXIT THE BUILDING',
+            '⛔ ABORT MISSION NOW',
+            '💀 STOP RIGHT THERE',
+          ];
+          btn.textContent = randomFrom(funnyLabels);
           btn.dataset.action = 'stop';
         }
       } else {
+        badge.className = 'status-badge';
+        badge.textContent = '⚪ IDLE';
+
         const timerEl = document.getElementById(`timer-${ch.id}`);
-        if (timerEl) timerEl.textContent = '';
+        if (timerEl) timerEl.textContent = '--:--:--';
 
         const btn = card.querySelector('.char-action-btn');
         if (btn && btn.dataset.action === 'stop') {
-          btn.textContent = '▶ START VISIT';
+          btn.textContent = '▶ START SUSPICIOUS ACTIVITY';
           btn.dataset.action = 'start';
         }
+      }
+
+      // Update running stats on card
+      const charVisits = visits.filter(v => v.characterId === ch.id);
+      const totalT = charVisits.reduce((sum, v) => sum + (v.duration || 0), 0);
+      const runEl = card.querySelector('.running-stat');
+        if (runEl) {
+          runEl.textContent = `Total visits: ${charVisits.length} · Stolen time: ${formatDuration(totalT)}`;
+        }
+      }
+
+      // Update streak
+      const streakEl = document.getElementById(`streak-${ch.id}`);
+      if (streakEl && charVisits.length > 0) {
+        streakEl.textContent = getStreakInfo(charVisits);
       }
     }
   });
 }
 
+function getStreakInfo(charVisits) {
+  const today = new Date().toISOString().split('T')[0];
+  const daysThisWeek = new Set();
+  for (const v of charVisits) {
+    const d = v.startTime?.toDate ? v.startTime.toDate().toISOString().split('T')[0] : '';
+    if (d) daysThisWeek.add(d);
+  }
+
+  // Count consecutive days backwards from today
+  let streak = 0;
+  const check = new Date();
+  // Start from yesterday for streak calculation
+  for (let i = 1; i <= 30; i++) {
+    check.setDate(check.getDate() - 1);
+    const ds = check.toISOString().split('T')[0];
+    if (daysThisWeek.has(ds)) { streak++; } else { break; }
+  }
+
+  if (streak >= 7) return `🔥 ${streak}-day visit streak! This is now a lifestyle.`;
+  if (streak >= 3) return `📅 ${streak} days in a row. The dedication. The commitment.`;
+  if (streak >= 2) return `👀 Showing up every day... respect or concern?`;
+  return '';
+}
+
 function renderRankings() {
   const totalVisitsAll = visits.length;
   if (totalVisitsAll === 0) {
-    $rankingsGrid.innerHTML = '<p class="empty-msg">No rankings yet — the race hasn\'t begun 🏁</p>';
+    $rankingsGrid.innerHTML = '<p class="empty-msg">No shame to reveal yet. The suspects are still marshalling their courage 🤠</p>';
     return;
   }
 
   const stats = characters.map(ch => ({
     ...ch,
-    charVisits: visits.filter(v => v.characterId === ch.id),
     totalCount: visits.filter(v => v.characterId === ch.id).length,
     totalTime: visits.filter(v => v.characterId === ch.id).reduce((sum, v) => sum + (v.duration || 0), 0),
   }));
@@ -185,17 +294,19 @@ function renderRankings() {
     const roast = getRoast(s.totalTime, s.totalCount);
 
     if (i === 0 && stats.length > 1 && s.totalTime > stats[1].totalTime) {
-      rankHtml += `<span class="crown" style="font-size:2rem;text-align:center;display:block;">👑${s.name}</span>`;
+      rankHtml += `<div class="crown" style="font-size:2.5rem;text-align:center;">👑</div>`;
     }
 
     rankHtml += `
-      <div class="rank-card" style="border-top:4px solid ${s.color}">
+      <div class="rank-card" style="border-top:4px solid ${s.color || '#888'}">
         <div class="rank-emoji">${s.emoji}</div>
-        <div class="rank-name">${s.name}</div>
-        <div class="stat-row"><span>Total Time</span><span>${formatDuration(s.totalTime)}</span></div>
-        <div class="stat-row"><span>Visits</span><span>${s.totalCount}</span></div>
-        <div class="rank-bar"><div class="rank-bar-fill" style="width:${percent}%;background:${s.color}"></div></div>
-        <p style="font-size:0.8rem;color:#777;margin-top:0.5rem;font-style:italic;">"${roast}"</p>
+        <div class="rank-name" style="color:${s.color || '#fff'}">${s.name}</div>
+        <div style="font-size:0.75rem;color:#666;margin-bottom:0.3rem;">Rank #${i + 1} — The Champion of Suspicion 🏅</div>
+        <div class="stat-row"><span>Total Time Wasted</span><span>${s.totalTime > 0 ? formatDuration(s.totalTime) : '—'}</span></div>
+        <div class="stat-row"><span>Total Visits</span><span>${s.totalCount || 0}</span></div>
+        <div class="stat-row"><span>Avg Duration</span><span>${s.totalCount > 0 ? formatDuration(Math.floor(s.totalTime / s.totalCount)) : '—'}</span></div>
+        <div class="rank-bar"><div class="rank-bar-fill" style="width:${percent}%;background:linear-gradient(90deg, ${s.color || '#8338ec'}, #ffbe0b)"></div></div>
+        <p class="roast-text">${roast}</p>
       </div>
     `;
   });
@@ -204,14 +315,13 @@ function renderRankings() {
 }
 
 function updateChartFilters() {
-  document.getElementById('filter-char').innerHTML = '<option value="all">All Characters</option>' +
-    characters.map(ch => `<option value="${ch.id}">${ch.name}</option>`).join('');
+  document.getElementById('filter-char').innerHTML = '<option value="all">All Suspects</option>' +
+    characters.map(ch => `<option value="${ch.id}">${ch.emoji} ${ch.name}</option>`).join('');
 }
 
 function renderVisitLog(filterId) {
   let filtered = filterId && filterId !== 'all' ? visits.filter(v => v.characterId === filterId) : [...visits];
 
-  // Sort by endTime desc (newest first)
   filtered.sort((a, b) => {
     const ta = a.endTime?.toDate?.() || new Date(a.endTime);
     const tb = b.endTime?.toDate?.() || new Date(b.endTime);
@@ -229,15 +339,16 @@ function renderVisitLog(filterId) {
   let html = '';
   filtered.forEach((v, i) => {
     const ch = characters.find(c => c.id === v.characterId);
-    const name = ch ? ch.emoji + ' ' + ch.name : '[DELETED]';
+    const name = ch ? `${ch.emoji} ${ch.name}` : '🕵️ Unknown Suspect (deported?)';
+    const duration = v.duration ? formatDuration(v.duration) : '<span style="color:#ff006e;animation:blinkBadge 1s infinite">⚠️ STILL ACTIVE</span>';
     html += `
       <tr>
         <td>${filtered.length - i}</td>
         <td>${name}</td>
         <td>${v.startTime?.toDate ? v.startTime.toDate().toLocaleString() : formatDate(v.startTime)}</td>
-        <td>${v.endTime?.toDate ? v.endTime.toDate().toLocaleString() : formatDate(v.endTime || '—')}</td>
-        <td style="font-weight:bold;color:#ffbe0b">${v.duration ? formatDuration(v.duration) : '<span style="color:#555">still going...</span>'}</td>
-        <td><button class="delete-visit-btn" data-id="${v.id}">Delete</button></td>
+        <td>${v.endTime?.toDate ? v.endTime.toDate().toLocaleString() : '<span style="color:#ff006e">∞ — Never</span>'}</td>
+        <td style="font-weight:bold;color:${v.duration ? '#ffbe0b' : '#ff006e'}">${duration}</td>
+        <td><button class="delete-visit-btn" data-id="${v.id}">🗑 Erase</button></td>
       </tr>
     `;
   });
@@ -248,13 +359,13 @@ function renderVisitLog(filterId) {
 // --- Charts ---
 
 function renderCharts() {
-  const labels = characters.map(c => c.name);
-  const totalTimePerChar = characters.map(ch => {
+  const labels = characters.length > 0 ? characters.map(c => c.name) : ['Nobody'];
+  const totalTimePerChar = characters.length > 0 ? characters.map(ch => {
     const filtered = visits.filter(v => v.characterId === ch.id && v.duration);
     return filtered.reduce((sum, v) => sum + v.duration, 0) / 60000; // minutes
-  });
+  }) : [0];
 
-  // Bar chart — total time
+  // Bar chart — total time waster
   if (charts.bar) charts.bar.destroy();
   const barCtx = document.getElementById('barChart').getContext('2d');
   charts.bar = new Chart(barCtx, {
@@ -262,12 +373,12 @@ function renderCharts() {
     data: {
       labels,
       datasets: [{
-        label: 'Total Minutes Spent',
+        label: 'Total Minutes Spent in Her Proximity',
         data: totalTimePerChar,
-        backgroundColor: characters.map(c => c.color + 'aa'),
-        borderColor: characters.map(c => c.color),
+        backgroundColor: characters.map(c => (c.color || '#8338ec') + 'aa'),
+        borderColor: characters.map(c => c.color || '#8338ec'),
         borderWidth: 2,
-        borderRadius: 8,
+        borderRadius: 10,
       }]
     },
     options: {
@@ -275,29 +386,34 @@ function renderCharts() {
       plugins: { legend: { display: false } },
       scales: {
         y: { beginAtZero: true, ticks: { color: '#aaa' }, grid: { color: '#2a2a4a' } },
-        x: { ticks: { color: '#aaa' }, grid: { display: false } },
+        x: { ticks: { color: '#ccc', font: { family: 'Bangers', size: 13 } }, grid: { display: false } },
       }
     }
   });
 
-  // Donut — visit count
+  // Donut — visit share
   if (charts.donut) charts.donut.destroy();
   const donutCtx = document.getElementById('donutChart').getContext('2d');
   const visitCountPerChar = characters.map(ch => visits.filter(v => v.characterId === ch.id).length);
+
+  let donutLabels = labels;
+  if (characters.length === 0) donutLabels = ['Nobody yet'];
+
   charts.donut = new Chart(donutCtx, {
     type: 'doughnut',
     data: {
-      labels,
+      labels: donutLabels,
       datasets: [{
-        data: visitCountPerChar,
-        backgroundColor: characters.map(c => c.color + 'cc'),
+        data: visitCountPerChar.length > 0 ? visitCountPerChar : [1],
+        backgroundColor: characters.map(c => (c.color || '#8338ec') + 'cc'),
         borderColor: '#1a1a2e',
         borderWidth: 4,
       }]
     },
     options: {
       responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { color: '#ccc' } } }
+      cutout: '55%',
+      plugins: { legend: { position: 'bottom', labels: { color: '#ccc', font: { family: 'Bangers' } } } }
     }
   });
 
@@ -322,13 +438,16 @@ function renderCharts() {
     data: {
       labels: last14.map(d => d.slice(5)), // MM-DD
       datasets: [{
-        label: 'Visits That Day',
+        label: 'Crimes Against Free Space That Day',
         data: visitsPerDay,
         borderColor: '#ffbe0b',
-        backgroundColor: '#ffbe0b33',
+        backgroundColor: '#ffbe0b22',
         fill: true,
         tension: 0.4,
         pointBackgroundColor: '#ff006e',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+        pointRadius: 5,
       }]
     },
     options: {
@@ -345,56 +464,53 @@ function renderCharts() {
 // --- Firebase: Characters ---
 
 async function addCharacter(name) {
-  const docSnap = await addDoc(collection(db, 'characters'), {
+  const ch = await addDoc(collection(db, 'characters'), {
     name,
     emoji: getEmojiForChar(name, characters.length),
     color: randomColor(characters.length + CHARACTERS_CONFIG.length),
     createdAt: serverTimestamp(),
   });
 
-  // Add to local state immediately
-  characters.push({ id: docSnap.id, name, emoji: getEmojiForChar(name, characters.length), color: randomColor(characters.length + CHARACTERS_CONFIG.length) });
+  characters.push({ id: ch.id, name, emoji: getEmojiForChar(name, characters.length), color: randomColor(characters.length + CHARACTERS_CONFIG.length) });
+
+  // Match preset if recognizable name
+  const lowerName = name.toLowerCase();
+  if (lowerName.includes('ex-hunter') || lowerName.includes('hunter')) { characters[characters.length-1].emoji = '🌑'; characters[characters.length-1].color = '#4a4a4a'; }
+  else if (lowerName.includes('français') || lowerName.includes('french'))   { characters[characters.length-1].emoji = '🇫🇷'; characters[characters.length-1].color = '#0055A4'; }
+
+  const chData = characters[characters.length - 1];
   renderCharacters();
   renderRankings();
   updateChartFilters();
-  showToast(`${emoji} ${name} joined the spy game!`);
+  fancyToast(randomFrom(TOAST_MESSAGES.addChar).replace('{{emoji}}', chData.emoji).replace('{{name}}', `<strong>${chData.name}</strong>`), 'success');
 }
 
 async function removeCharacter(charId) {
-  if (!confirm('Remove this character? Visits will remain but be orphaned.')) return;
+  if (!confirm('Discharge this character? Their visits will remain as evidence forever. ⚖️')) return;
   const ch = characters.find(c => c.id === charId);
-
-  // Stop any active timer
   delete activeTimers[charId];
 
   await deleteDoc(doc(db, 'characters', charId));
-
   characters = characters.filter(c => c.id !== charId);
 
-  // Remove from DOM
   const card = $charGrid.querySelector(`.char-card[data-id="${charId}"]`);
   if (card) card.remove();
 
   renderRankings();
   updateChartFilters();
   renderVisitLog($filterChar.value);
-  showToast(`${ch?.name || 'Character'} has left the building 🚪`);
+  fancyToast(randomFrom(TOAST_MESSAGES.removeChar).replace('{{name}}', `<strong>${ch?.name || 'Unknown'}</strong>`), 'warning');
 }
 
 function listenToCharacters() {
   onSnapshot(collection(db, 'characters'), (snap) => {
     characters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Merge emoji from config if it's one of the preset characters
-    characters.forEach((ch, i) => {
+    // Match preset emojis/colors by name
+    characters.forEach((ch) => {
       const lowerName = ch.name.toLowerCase();
-      if (lowerName.includes('ex-hunter') || lowerName.includes('hunter')) {
-        ch.emoji = '🌑';
-        ch.color = '#4a4a4a';
-      } else if (lowerName.includes('français') || lowerName.includes('french')) {
-        ch.emoji = '🇫🇷';
-        ch.color = '#0055A4';
-      }
+      if (lowerName.includes('ex-hunter') || lowerName.includes('hunter')) { ch.emoji = '🌑'; ch.color = '#4a4a4a'; }
+      else if (lowerName.includes('français') || lowerName.includes('french') || lowerName.includes('france')) { ch.emoji = '🇫🇷'; ch.color = '#0055A4'; }
     });
 
     renderCharacters();
@@ -402,7 +518,6 @@ function listenToCharacters() {
     updateChartFilters();
   }, (err) => {
     console.error('Firestore characters error:', err);
-    showToast('⚠️ Could not load characters');
   });
 }
 
@@ -412,12 +527,14 @@ async function endVisit(charId, startTime) {
   const endTime = new Date();
   const duration = endTime - startTime;
 
-  if (duration < 1000) {
-    showToast('⏱️ Timer too short! Wait at least 1 second.');
+  if (duration < 2000) {
+    showToast('⏱️ That was a walk-by! Stay at least 2 seconds first. 😐');
     return;
   }
 
   delete activeTimers[charId];
+  const ch = characters.find(c => c.id === charId);
+  const name = ch ? ch.name : '[deleted]';
 
   await addDoc(collection(db, 'visits'), {
     characterId: charId,
@@ -428,10 +545,25 @@ async function endVisit(charId, startTime) {
 
   renderCharacters();
   renderVisitLog($filterChar.value);
+  fancyToast(
+    randomFrom(TOAST_MESSAGES.visitEnd)
+      .replace('{{name}}', `<strong>${name}</strong>`)
+      .replace('{{duration}}', `<strong>${formatDuration(duration)}</strong>`)
+      .replace('{{date}}', `<strong>${endTime.toLocaleTimeString()}</strong>`),
+  'drama');
+
+  // Dramatic one-time milestone toast
+  const milestones = JSON.parse(localStorage.getItem('nb_watch_milestones') || '{}');
+  if (totalT > 3600000 && !milestones[charId]) {
+    milestones[charId] = true;
+    localStorage.setItem('nb_watch_milestones', JSON.stringify(milestones));
+    setTimeout(() => fancyToast(`🏠 <strong>${name}</strong> has now spent 1+ HOURS at her desk. This is no longer a "visit." <em>This is... other stuff.</em>`, 'drama'), 1000);
+  }
 }
 
 async function addActiveVisit(charId) {
   activeTimers[charId] = Date.now();
+  const ch = characters.find(c => c.id === charId);
   await addDoc(collection(db, 'visits'), {
     characterId: charId,
     startTime: Timestamp.fromDate(new Date(activeTimers[charId])),
@@ -440,27 +572,31 @@ async function addActiveVisit(charId) {
   });
 
   renderCharacters();
+  fancyToast(
+    randomFrom(TOAST_MESSAGES.visitStart).replace('{{name}}', `<strong>${ch?.name || '???'}</strong>`),
+    'drama'
+  );
 }
 
 async function deleteVisit(visitId) {
   await deleteDoc(doc(db, 'visits', visitId));
-  showToast('Visit deleted');
+  showToast('🗑️ One piece of evidence erased. But the rumors remain.');
 }
 
 async function clearAllVisits() {
-  if (!confirm('Delete ALL visits? This cannot be undone! 💀')) return;
+  if (!confirm('⚠️ REAL. DELETE ALL VISITS? This will burn the entire case file. Are you SURE?')) return;
 
   for (const v of visits) {
     await deleteDoc(doc(db, 'visits', v.id));
   }
-  showToast('🗑️ All visits obliterated');
+  fancyToast(randomFrom(TOAST_MESSAGES.clearVisits), 'warning');
 }
 
 function listenToVisits() {
   onSnapshot(query(collection(db, 'visits'), orderBy('startTime', 'desc')), (snap) => {
     visits = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Restore any ongoing timers from unsaved visits (page reload scenario)
+    // Restore any ongoing timers from unsaved visits (page refresh scenario)
     for (const v of visits) {
       if (!v.endTime && !activeTimers[v.characterId]) {
         activeTimers[v.characterId] = new Date(v.startTime).getTime();
@@ -473,10 +609,9 @@ function listenToVisits() {
     renderCharts();
 
     const total = visits.length;
-    $totalVisitCount.textContent = total > 0 ? `📈 Total visits tracked: ${total}` : '';
+    $totalVisitCount.textContent = total > 0 ? `📈 Total suspicious acts tracked: ${total} — and counting...` : '';
   }, (err) => {
     console.error('Firestore visits error:', err);
-    showToast('⚠️ Could not load visits');
   });
 }
 
@@ -536,18 +671,17 @@ async function init() {
       if (el) {
         el.textContent = formatDuration(elapsed);
 
-        // If visit no longer exists in Firestore (was stopped), clear timer UI
+        // If visit no longer exists in Firestore (was stopped), clear UI
         const stillActive = visits.some(v => v.characterId === charId && !v.endTime);
         if (!stillActive) {
           delete activeTimers[charId];
-          el.textContent = '';
+          el.textContent = '--:--:--';
         }
       }
     }
   }, 1000);
 
   // If no characters exist yet, auto-add the preset hunters
-  let hasChars = false;
   try {
     const snap = await getDocs(collection(db, 'characters'));
     if (snap.empty) {
@@ -559,7 +693,7 @@ async function init() {
           color: cfg.color,
         });
       }
-      showToast('🎭 Welcome! Two hunters enter the game.');
+      fancyToast('🎭 Welcome to <strong>New Bae Watch</strong>. The suspects are in position.<br><em>Time to find out who\'s really dedicated.</em>', 'drama');
     }
   } catch (err) {
     console.error('Initial data error:', err);
