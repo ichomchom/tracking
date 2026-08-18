@@ -1,7 +1,7 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -62,7 +62,7 @@ header {
 }
 
 .subtitle {
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 1.15rem;
   color: #ccc;
   margin-top: 0.5rem;
@@ -95,7 +95,7 @@ section {
 }
 
 section h2 {
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 1.7rem;
   color: #ffbe0b;
   margin-bottom: 1rem;
@@ -126,7 +126,7 @@ section h2 {
   color: #fff;
   width: 280px;
   outline: none;
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   transition: border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -145,7 +145,7 @@ section h2 {
   cursor: pointer;
   background: linear-gradient(135deg, #ff006e, #8338ec);
   color: #fff;
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   letter-spacing: 1.5px;
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -226,6 +226,7 @@ section h2 {
 
 .char-card .emoji { font-size: 3.8rem; margin-bottom: 0.2rem; transition: transform 0.3s; }
 .char-card:hover .emoji { transform: scale(1.15) rotate(5deg); }
+
 .char-card .name {
   font-family: 'Bangers', cursive;
   font-size: 1.5rem;
@@ -240,7 +241,7 @@ section h2 {
 }
 
 .char-card .timer-display {
-  font-family: 'Permanent Marker', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 2.4rem;
   font-weight: bold;
   margin: 0.5rem 0;
@@ -251,10 +252,10 @@ section h2 {
   min-width: 140px;
 }
 
+
 .char-card .card-label {
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase;
+  font-family: 'Bangers', cursive;
+  font-size: 0.9rem;
   letter-spacing: 2px;
   margin-bottom: 0.3rem;
 }
@@ -268,7 +269,7 @@ section h2 {
   cursor: pointer;
   color: #fff;
   width: 100%;
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   letter-spacing: 2px;
   transition: transform 0.2s, filter 0.2s;
 }
@@ -330,7 +331,7 @@ section h2 {
 
 .rank-card .rank-emoji { font-size: 2.8rem; }
 .rank-card .rank-name {
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 1.25rem;
   margin: 0.3rem 0;
   letter-spacing: 1px;
@@ -388,7 +389,7 @@ section h2 {
 }
 
 .chart-box h3 {
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   font-size: 1.1rem;
   color: #ddd;
   margin-bottom: 1rem;
@@ -433,7 +434,7 @@ section h2 {
 }
 
 #visits-table th {
-  font-family: 'Bangers', cursive;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: #ffbe0b;
   font-size: 0.9rem;
   letter-spacing: 1px;
