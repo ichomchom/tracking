@@ -3,13 +3,13 @@ import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.14.1/firebas
 import { getFirestore, collection, addDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp, getDocs, Timestamp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBxpJov1i6lCeTa813a6hk1ihHS7W2vKYA",
-  authDomain: "test-cd485.firebaseapp.com",
-  projectId: "test-cd485",
-  storageBucket: "test-cd485.firebasestorage.app",
-  messagingSenderId: "217137197135",
-  appId: "1:217137197135:web:4d96faee3884f990737a3a",
-  measurementId: "G-4VN4LHN86Y"
+  apiKey: "AIzaSyAeG-PvskJxUg7d-GbkiGtJ36jGdW5NkDY",
+  authDomain: "tracking-3535d.firebaseapp.com",
+  projectId: "tracking-3535d",
+  storageBucket: "tracking-3535d.firebasestorage.app",
+  messagingSenderId: "636578616250",
+  appId: "1:636578616250:web:d288618cb25f639dbe0383",
+  measurementId: "G-JFEP9DNGL5"
 };
 
 const app = initializeApp(firebaseConfig);
