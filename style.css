@@ -302,6 +302,35 @@ section h2 {
 .char-card .card-footer button.remove-btn { background: #6b21a8; }
 .char-card .card-footer button.remove-btn:hover { background: #dc2626; }
 
+/* ===== TREAT COUNTER ===== */
+.char-card .treat-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.char-card .treat-count {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ef476f;
+  letter-spacing: 0.5px;
+}
+
+.char-card button.treat-btn {
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #fff;
+  transition: transform 0.2s, filter 0.2s;
+}
+
+.char-card button.treat-btn:hover { transform: scale(1.1); }
+
 /* ===== STATS / RANKINGS ===== */
 .rankings-grid {
   display: grid;

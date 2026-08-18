@@ -36,9 +36,9 @@ const TOAST_MSGS = {
   removeChar: ['Discharged from the program (banned from her desk) \u{1f6aa}']
 };
 
-let characters = [], visits = [];
+let characters = [], visits = [], treats = [];
 let activeTimers = {};
-let chartsObj = { bar: null, line: null, donut: null };
+let chartsObj = { bar: null, line: null, donut: null, treat: null };
 
 const $cg = document.getElementById('characters-grid');
 const $noC = document.getElementById('no-characters-msg');
@@ -178,7 +178,9 @@ function renderCharacters() {
       var btnLabel = isActive ? rf(['STOP BEING SUSPICIOUS', 'EXIT THE BUILDING', 'ABORT']) : 'START SUSPICIOUS ACTIVITY';
       html += '<button class="char-action-btn" data-cid="' + ch.id + '" data-act="' + actionBtn + '" style="background:' + col + '">' + btnLabel + '</button>';
 
+      var treatCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
       html += '<div class="streak-info"></div>';
+      html += '<div class="treat-area"><span class="treat-count" id="trt-' + ch.id + '">🍪x' + treatCount + '</span> <button class="treat-btn" data-cid="' + ch.id + '" style="background:' + col + '">🍪 Treat</button></div>';
       html += '<div class="card-footer"><button class="remove-btn" data-cid="' + ch.id + '">\u{1f5d1}\uFE0F Discharge</button></div>';
 
       card.innerHTML = html;
@@ -220,6 +222,11 @@ function renderCharacters() {
       var labelEl = document.getElementById('ctl-' + ch.id);
       if (labelEl) labelEl.innerHTML = newTier.emoji + ' ' + newTier.label;
       if (labelEl) labelEl.style.color = newTier.color;
+
+      /* update treat count */
+      var tCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
+      var trtEl = document.getElementById('trt-' + ch.id);
+      if (trtEl) trtEl.textContent = '🍪x' + tCount + '🍪';
     }
   });
 }
@@ -395,6 +402,53 @@ function renderCharts() {
   });
 }
 
+/* ---- TREAT CHART ---- */
+
+function renderTreatChart() {
+  if (!characters.length || !treats.length) return;
+
+  if (chartsObj.treat) chartsObj.treat.destroy();
+
+  var nowDate = new Date();
+  var last14Days = [];
+  for (var i = 0; i < 14; i++) {
+    var dd = new Date(nowDate);
+    dd.setDate(dd.getDate() - (13 - i));
+    last14Days.push(dd.toISOString().split('T')[0]);
+  }
+
+  var treatsPerDay = last14Days.map(function (dayStr) {
+    return treats.filter(function (t) {
+      var ds = t.createdAt && t.createdAt.toDate ? t.createdAt.toDate().toISOString().split('T')[0] : '';
+      return ds === dayStr;
+    }).length;
+  });
+
+  chartsObj.treat = new Chart(document.getElementById('treatChart'), {
+    type: 'line',
+    data: {
+      labels: last14Days.map(function (d) { return d.slice(5); }),
+      datasets: [{
+        label: 'Treats Given',
+        data: treatsPerDay,
+        borderColor: '#06d6a0',
+        backgroundColor: '#06d6a022',
+        fill: true, tension: 0.4,
+        pointBackgroundColor: '#ef476f',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true, plugins: { legend: { display: false } },
+      scales: {
+        y: { beginAtZero: true, ticks: { color: '#aaa', stepSize: 1 }, grid: { color: '#2a2a4a' } },
+        x: { ticks: { color: '#aaa' }, grid: { display: false } }
+      }
+    }
+  });
+}
+
 /* ---- FIREBASE OPERATIONS ---- */
 
 async function addCharacter(name) {
@@ -503,6 +557,9 @@ async function removeCharacter(charId) {
 
   try { await deleteDoc(doc(db, 'characters', charId)); } catch (e) {}
 
+  var tDocs = treats.filter(function (t) { return t.characterId === charId; });
+  for (var i = 0; i < tDocs.length; i++) { try { await deleteDoc(doc(db, 'treats', tDocs[i].id)); } catch (e) {} }
+
   characters = characters.filter(function (c) { return c.id !== charId; });
 
   var cardEl = $cg.querySelector('.char-card[data-cid="' + charId + '"]');
@@ -519,6 +576,35 @@ async function deleteVisit(visitId) {
     await deleteDoc(doc(db, 'visits', visitId));
   } catch (e) {}
   showToast('One piece of evidence erased. Rumors remain.');
+}
+
+async function giveTreat(charId) {
+  var chName = ''; for (var i = 0; i < characters.length; i++) { if (characters[i].id === charId) { chName = characters[i].name; break; } }
+  
+  try {
+    await addDoc(collection(db, 'treats'), {
+      characterId: charId,
+      createdAt: serverTimestamp()
+    });
+  } catch (e) {
+    console.warn('Treat failed:', e);
+  }
+
+  showToast('🍪 Dropped a treat for "' + chName + '"! She knows you are bribing her.', 'success');
+}
+
+function listenToTreats() {
+  onSnapshot(collection(db, 'treats'), function (snap) {
+    treats = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
+    
+    characters.forEach(function (ch) {
+      var treatCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
+      var trtEl = document.getElementById('trt-' + ch.id);
+      if (trtEl) trtEl.textContent = '🍪x' + treatCount + '🍪';
+    });
+
+    renderTreatChart();
+  }, function (err) { console.error('Treats snapshot error:', err.message || err); });
 }
 
 /* ---- UPDATE FILTER DRODOWN ---- */
@@ -554,6 +640,9 @@ $cg.addEventListener('click', async function (e) {
     return;
   }
 
+  var trtBtn = e.target.closest('.treat-btn');
+  if (trtBtn) { await giveTreat(trtBtn.dataset.cid); return; }
+
   var rmBtn = e.target.closest('.remove-btn');
   if (rmBtn) { await removeCharacter(rmBtn.dataset.cid); return; }
 });
@@ -583,3 +672,4 @@ setInterval(function () {
 
 listenToCharacters();
 listenToVisits();
+listenToTreats();
