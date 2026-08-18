@@ -89,20 +89,20 @@ function showToast(msg, typ) {
 
 function buildRoast(totalTimeMs) {
   var mins = totalTimeMs / 60000;
-  if (mins > 1500) return '\u{1F480} This is cohabitation now. Register as partners.';
-  if (mins > 1000) return '\u{1F3E0} New Bae set up an Airbnb with your name on it.';
-  if (mins > 600)  return '\u{1F48D} The ring vendor knows you by first name already.';
-  if (mins > 400)  return '\u{1F4E6} You have a DRAWER in her office. For what?!';
-  if (mins > 250)  return '\u{1F37C} Someone ordered matching comforters and everything.';
-  if (mins > 150)  return '\u{1F633} Her desk chair has your fingerprints on both armrests.';
-  if (mins > 100)  return '\u{1F4B8} She started saving screenshots NOW for EVICTION. \u{1f62d}';
-  if (mins > 70)   return '\u{1F6A8} The fire marshal called. They are concerned about you.';
-  if (mins > 45)   return '\u{23F0} You have aged 3 entire business years standing up.';
-  if (mins > 25)   return '\u{1F9CA} Check for a pulse under that desk furniture.';
-  if (mins > 15)   return '\u{1F928} HR started taking notes. With ACTUAL concern.';
-  if (mins > 8)    return '\u{1F62C} The intern noticed you already. Slack gossip time.';
-  if (mins > 4)    return '\u{1F99F} Casual visit. Professionals, right?';
-  return '\u{1FAA8}\uFE0F Still learning the printer, huh? Proud of you!';
+  if (mins > 1500) return "💀 This ain't a visit anymore, this is cohabitation. They should just register as domestic partners.";
+  if (mins > 1000) return "🏠 New Bae has set up an Airbnb listing with only your name on it now.";
+  if (mins > 600)  return "💍 The ring vendor knows you by first name. Wedding dates are being discussed at the watercooler.";
+  if (mins > 400)  return "📦 You have a drawer in her office. A DRAWER. For what?!";
+  if (mins > 250)  return "🍱 Someone already ordered you matching company hoodies and everything.";
+  if (mins > 150)  return "😳 New Bae's desk chair now has your fingerprints on both armrests.";
+  if (mins > 100)  return "💸 She started saving screenshots of your messages. For EVICTION purposes...?";
+  if (mins > 70)   return "🚨 The fire marshal noticed you don't leave and is now concerned for your wellbeing.";
+  if (mins > 45)   return "⏰ You've aged 3 business years since standing up. Neck says hi btw.";
+  if (mins > 25)   return "🧊 Someone should check if there's a pulse under all that desk furniture.";
+  if (mins > 15)   return '🤨 At this point HR is starting to take notes with actual concern.';
+  if (mins > 8)    return '😬 The intern noticed. This is now official gossip in Team Tuesday Brunch.';
+  if (mins > 4)    return "🦟 Just a casual visit. Respectable. You're practically professionals at this point.";
+  return '🖨️ Still learning where the printer lives, huh? Grounds to keep. Proud of you!';
 }
 
 function buildStreak(visitsForChar) {
