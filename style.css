@@ -505,6 +505,11 @@ footer {
 
 footer p { margin: 0.3rem 0; }
 
+/* Treatment visual style — green tinted rows */
+#visits-table .visit-treat-row { background: #1a2e1a !important; }
+#visits-table .visit-treat-row:hover { background: #243a24 !important; }
+#visits-table td.treat-note { color: #06d6a0a8; font-style: italic; padding-left: 0.5rem; text-align: center; }
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 768px) {
   .main-title { font-size: 2.2rem; letter-spacing: 2px; }

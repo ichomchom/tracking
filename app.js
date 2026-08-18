@@ -119,7 +119,7 @@ function buildStreak(visitsForChar) {
   }
   if (streak >= 7) return '\u{1F525} ' + streak + '-day streak! This is a lifestyle.';
   if (streak >= 3) return '\u{1F4C5} ' + streak + ' days in a row. Commitment!';
-  if (streak >= 2) return '\u{1F440} Every day... respect or concern?';
+  if (streak >= 2) return '👀 Every day... respect or concern?';
   return '';
 }
 
@@ -127,14 +127,14 @@ function buildStreak(visitsForChar) {
 
 function buildTier(totalMs) {
   var m = Math.floor(totalMs / 60000);  // minutes of total visit time for this character
-  if (m >= 480)   return { label: 'THE WEDDING PLANNER', emoji: '\u{1F470}', color: '#e53935' };
-  if (m >= 300)   return { label: 'HAS THEIR OWN KEYCARD NOW', emoji: '\ud83d\udd11', color: '#c77dff' };
-  if (m >= 180)   return { label: 'NEVER LEAVES HER SIDE AGAIN', emoji: '\u{1F4AC}', color: '#ffd54f' };
-  if (m >= 90)    return { label: 'COLLECTING STUFF FOR A ROOM OF THEIRS', emoji: '\ud83d\ude07', color: '#ffb74d' };
-  if (m >= 45)    return { label: 'KNOWN AS "DESK-MATE" (NOT CO-WORKER)', emoji: '\u{1F60E}', color: '#7b2d8e' };
-  if (m >= 20)    return { label: 'STALKER', emoji: '\U0001f440', color: '#90005e' };
-  if (m >= 10)    return { label: 'HOVERER', emoji: '\u{1F60E}', color: '#c77dff' };
-  return { label: 'THE SUSPECT', emoji: '\U0001f575\ufe0f', color: '#8338ec' };
+  if (m >= 480)   return { label: 'THE WEDDING PLANNER', emoji: '👰', color: '#e53935' };
+  if (m >= 300)   return { label: 'HAS THEIR OWN KEYCARD NOW', emoji: '🔑', color: '#c77dff' };
+  if (m >= 180)   return { label: 'NEVER LEAVES HER SIDE AGAIN', emoji: '💬', color: '#ffd54f' };
+  if (m >= 90)    return { label: 'COLLECTING STUFF FOR A ROOM OF THEIRS', emoji: '😇', color: '#ffb74d' };
+  if (m >= 45)    return { label: 'KNOWN AS "DESK-MATE" (NOT CO-WORKER)', emoji: '📍', color: '#7b2d8e' };
+  if (m >= 20)    return { label: 'STALKER', emoji: '👀', color: '#90005e' };
+  if (m >= 10)    return { label: 'HOVERER', emoji: '👤', color: '#c77dff' };
+  return { label: 'THE SUSPECT', emoji: '🕵‍♀️', color: '#8338ec' };
 }
 
 /* ---- RENDER CHARACTERS ---- */
@@ -174,6 +174,11 @@ function renderCharacters() {
       html += '<div class="running-stat">Visits: ' + cVisits.length + ' | Time: ' + fmtDur(totalMs) + '</div>';
       html += '<div class="timer-display" id="tmr-' + ch.id + '" style="color:' + col + '">--:--</div>';
 
+      /* Treat button — always visible */
+      var treatCount = cVisits.filter(function (v) { return v.visitType === 'treat'; }).length;
+      html += '<button class="char-treat-btn" data-cid="' + ch.id + '" style="background:#06d6a0">\u{1F355} TREAT (' + treatCount + ')</button>';
+
+      /* Start/Stop button */
       var actionBtn = isActive ? 'stop' : 'start';
       var btnLabel = isActive ? rf(['STOP BEING SUSPICIOUS', 'EXIT THE BUILDING', 'ABORT']) : 'START SUSPICIOUS ACTIVITY';
       html += '<button class="char-action-btn" data-cid="' + ch.id + '" data-act="' + actionBtn + '" style="background:' + col + '">' + btnLabel + '</button>';
@@ -212,6 +217,13 @@ function renderCharacters() {
       var statLine = card.querySelector('.running-stat');
       if (statLine) statLine.textContent = 'Visits: ' + cVisits.length + ' | Stolen time: ' + fmtDur(totalMs);
 
+      /* Refresh treat count on existing cards */
+      var treatBtn = card.querySelector('.char-treat-btn');
+      if (treatBtn) {
+        var tc = cVisits.filter(function (v) { return v.visitType === 'treat'; }).length;
+        treatBtn.innerHTML = '\u{1F355} TREAT (' + tc + ')';
+      }
+
       var streakEl = card.querySelector('.streak-info');
       if (streakEl && cVisits.length > 0) streakEl.textContent = buildStreak(cVisits);
 
@@ -229,11 +241,16 @@ function renderCharacters() {
 function renderRankings() {
   if (!visits.length) { $rg.innerHTML = '<p class="empty-msg">Time to reveal the truth is not yet...</p>'; return; }
 
+  var treatmentVisits = visits.filter(function (v) { return v.visitType === 'treat'; });
+
   var stats = characters.map(function (ch) {
-    var cv = visits.filter(function (v) { return v.characterId === ch.id; });
+    /* Observations (non-treats used for time-based ranking) */
+    var obVisits = visits.filter(function (v) { return v.characterId === ch.id && v.visitType !== 'treat'; });
+    var treatCount = treatmentVisits.filter(function (v) { return v.characterId === ch.id; }).length;
     return {
       name: ch.name, emoji: ch.emoji, color: ch.color || '#8338ec',
-      tc: cv.length, tt: cv.reduce(function (s, v) { return s + (v.duration || 0); }, 0)
+      obsCount: obVisits.length, tt: obVisits.reduce(function (s, v) { return s + (v.duration || 0); }, 0),
+      treatCount: treatCount, totalInteractions: obVisits.length + treatCount
     };
   });
   if (!stats.length) return;
@@ -252,7 +269,10 @@ function renderRankings() {
     row += '<div class="rank-name" style="color:' + s.color + '">' + s.name + '</div>';
     var timeStr = ''; if (s.tt > 0) { timeStr = fmtDur(s.tt); } else { timeStr = '--'; }
     row += '<div class="stat-row"><span>Time Wasted</span><span>' + timeStr + '</span></div>';
-    row += '<div class="stat-row"><span>Total Visits</span><span>' + s.tc + '</span></div>';
+    row += '<div class="stat-row"><span>Total Interactions</span><span>' + s.totalInteractions + '</span></div>';
+    if (s.treatCount > 0) {
+      row += '<div class="stat-row" style="color:#06d6a0"><span>\u{1F355} Treated</span><span>' + s.treatCount + '</span></div>';
+    }
     row += '<div class="rank-bar"><div class="rank-bar-fill" style="width:' + pct + '%;background:' + s.color + '"></div></div>';
     row += '<p class="roast-text">' + roastTxt + '</p>';
     row += '</div>';
@@ -267,8 +287,9 @@ function renderRankings() {
 function renderVisitLog(filterId) {
   var filtered = (filterId && filterId !== 'all') ? visits.filter(function (v) { return v.characterId === filterId; }) : [].concat(visits);
   filtered.sort(function (a, b) {
-    var ta = a.endTime && a.endTime.toDate ? a.endTime.toDate() : new Date(a.endTime);
-    var tb = b.endTime && b.endTime.toDate ? b.endTime.toDate() : new Date(b.endTime);
+    /* Sort by startTime desc — handle treats and regular visits */
+    var ta = a.startTime && a.startTime.toDate ? a.startTime.toDate() : new Date(0);
+    var tb = b.startTime && b.startTime.toDate ? b.startTime.toDate() : new Date(0);
     return tb - ta;
   });
 
@@ -278,18 +299,30 @@ function renderVisitLog(filterId) {
   var html = '';
   filtered.forEach(function (v, i) {
     /* find character name */ var chName = ''; for (var c = 0; c < characters.length; c++) { if (characters[c].id === v.characterId) { chName = (characters[c].emoji || '') + ' ' + characters[c].name; break; } }
-    if (!chName) chName = '\u{1F575}\uFE0F Unknown';
+    if (!chName) chName = '🕵‍♀️ Unknown';
 
-    var durHtml = ''; var durColor = '#ffbe0b';
-    if (v.duration) { durHtml = '<b>' + fmtDur(v.duration) + '</b>'; } else { durHtml = '<span style="color:#ff006e">STILL ACTIVE</span>'; durColor = '#ff006e'; }
-
+    /* Handle treat entries differently */
     var r = '';
-    r += '<tr><td>' + (filtered.length - i) + '</td>';
-    r += '<td>' + chName + '</td>';
-    r += '<td>' + fmtDate(v.startTime) + '</td>';
-    r += '<td>' + fmtDate(v.endTime) + '</td>';
-    r += '<td style="font-weight:bold;color:' + durColor + '">' + durHtml + '</td>';
-    r += '<td><button class="delete-visit-btn" data-id="' + v.id + '">\u{1f5d1}\uFE0F</button></td>';
+    if (v.visitType === 'treat') {
+      r += '<tr class="visit-treat-row">';
+      r += '<td>' + (filtered.length - i) + '</td>';
+      r += '<td style="color:#06d6a0">\u{1F355} TREAT</td>';
+      r += '<td>' + fmtDate(v.startTime) + '</td>';
+      r += '<td colspan="2" class="treat-note">Instant interaction — no duration</td>';
+      r += '<td><button class="delete-visit-btn" data-id="' + v.id + '">\u{1f5d1}\uFE0F</button></td>';
+      r += '</tr>';
+    } else {
+      var durHtml = ''; var durColor = '#ffbe0b';
+      if (v.duration) { durHtml = '<b>' + fmtDur(v.duration) + '</b>'; } else { durHtml = '<span style="color:#ff006e">STILL ACTIVE</span>'; durColor = '#ff006e'; }
+
+      r += '<tr>';
+      r += '<td>' + (filtered.length - i) + '</td>';
+      r += '<td>' + chName + '</td>';
+      r += '<td>' + fmtDate(v.startTime) + '</td>';
+      r += '<td>' + fmtDate(v.endTime) + '</td>';
+      r += '<td style="font-weight:bold;color:' + durColor + '">' + durHtml + '</td>';
+      r += '<td><button class="delete-visit-btn" data-id="' + v.id + '">\u{1f5d1}\uFE0F</button></td>';
+    }
     r += '</tr>';
     html += r;
   });
@@ -302,10 +335,14 @@ function renderCharts() {
   if (!characters.length) return;
   var labels = characters.map(function (c) { return c.name; });
 
-  /* Bar Chart */
+  /* Separate out treats */
+  var treatVisits = visits.filter(function (v) { return v.visitType === 'treat'; });
+  var regularVisits = visits.filter(function (v) { return v.visitType !== 'treat'; });
+
+  /* Bar Chart — time spent per character */
   if (chartsObj.bar) chartsObj.bar.destroy();
   var barVals = characters.map(function (ch) {
-    var vals = visits.filter(function (v) { return v.characterId === ch.id && v.duration; });
+    var vals = regularVisits.filter(function (v) { return v.characterId === ch.id && v.duration; });
     return vals.reduce(function (s, v) { return s + v.duration; }, 0) / 60000; /* minutes */
   });
 
@@ -331,21 +368,24 @@ function renderCharts() {
     }
   });
 
-  /* Donut Chart */
+    /* Donut Chart — separates treats from time-based visits */
   if (chartsObj.donut) chartsObj.donut.destroy();
-  var donutData = characters.map(function (ch) {
-    return visits.filter(function (v) { return v.characterId === ch.id; }).length;
+
+  var regularCount = characters.map(function (ch) {
+    return regularVisits.filter(function (v) { return v.characterId === ch.id; }).length;
+  });
+  var treatCount = characters.map(function (ch) {
+    return treatVisits.filter(function (v) { return v.characterId === ch.id; }).length;
   });
 
   chartsObj.donut = new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
       labels: labels,
-      datasets: [{
-        data: donutData,
-        backgroundColor: characters.map(function (c) { return (c.color || '#8338ec') + 'cc'; }),
-        borderColor: '#1a1a2e', borderWidth: 4
-      }]
+      datasets: [
+        { label: 'Observation Time', data: regularCount, backgroundColor: characters.map(function (c) { return (c.color || '#8338ec') + 'cc'; }), borderColor: '#1a1a2e', borderWidth: 4 },
+        { label: 'Times Treated', data: treatCount, backgroundColor: characters.map(function () { return '#06d6a0cc'; }), borderColor: '#1a1a2e', borderWidth: 4 }
+      ]
     },
     options: {
       responsive: true, cutout: '55%',
@@ -353,7 +393,7 @@ function renderCharts() {
     }
   });
 
-  /* Line Chart */
+  /* Line Chart — observations vs treats over last 14 days */
   if (chartsObj.line) chartsObj.line.destroy();
   var nowDate = new Date();
   var last14Days = [];
@@ -363,8 +403,14 @@ function renderCharts() {
     last14Days.push(dd.toISOString().split('T')[0]);
   }
 
-  var visitsPerDay = last14Days.map(function (dayStr) {
-    return visits.filter(function (v) {
+  var obsPerDay = last14Days.map(function (dayStr) {
+    return regularVisits ? regularVisits.filter(function (v) {
+      var ds = v.startTime && v.startTime.toDate ? v.startTime.toDate().toISOString().split('T')[0] : '';
+      return ds === dayStr;
+    }).length : 0;
+  });
+  var treatPerDay = last14Days.map(function (dayStr) {
+    return treatVisits.filter(function (v) {
       var ds = v.startTime && v.startTime.toDate ? v.startTime.toDate().toISOString().split('T')[0] : '';
       return ds === dayStr;
     }).length;
@@ -374,16 +420,10 @@ function renderCharts() {
     type: 'line',
     data: {
       labels: last14Days.map(function (d) { return d.slice(5); }),
-      datasets: [{
-        label: 'Crimes That Day',
-        data: visitsPerDay,
-        borderColor: '#ffbe0b',
-        backgroundColor: '#ffbe0b22',
-        fill: true, tension: 0.4,
-        pointBackgroundColor: '#ff006e',
-        pointBorderColor: '#fff',
-        pointBorderWidth: 2
-      }]
+      datasets: [
+        { label: 'Observations', data: obsPerDay, borderColor: '#ffbe0b', backgroundColor: '#ffbe0b22', fill: true, tension: 0.4, pointBackgroundColor: '#ff006e', pointBorderColor: '#fff', pointBorderWidth: 2 },
+        { label: 'Treats', data: treatPerDay, borderColor: '#06d6a0', backgroundColor: '#06d6a022', fill: true, tension: 0.4, pointBackgroundColor: '#06d6a0', pointBorderColor: '#fff', pointBorderWidth: 2 }
+      ]
     },
     options: {
       responsive: true, plugins: { legend: { display: false } },
@@ -439,11 +479,14 @@ function listenToVisits() {
   onSnapshot(query(collection(db, 'visits'), orderBy('startTime', 'desc')), function (snap) {
     var rawDocs = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
 
-    /* Keep only complete visits — those with both endTime and duration */
-    visits = rawDocs.filter(function (v) { return v.endTime != null && v.duration != null; });
+    /* Keep regular visits (startTime+endTime+duration) AND treats (visitType='treat') */
+    visits = rawDocs.filter(function (v) {
+      if (v.visitType === 'treat') return true;
+      return v.endTime != null && v.duration != null;
+    });
 
     /* Restore ongoing timers from page reload */
-    visits.forEach(function (v) {
+    regularVisits.forEach(function (v) {
       if (!v.endTime && !activeTimers[v.characterId]) {
         activeTimers[v.characterId] = new Date(v.startTime).getTime();
       }
@@ -454,9 +497,9 @@ function listenToVisits() {
     renderRankings();
     renderCharts();
 
-    /* Delete orphaned start-docs from old buggy sessions */
+    /* Delete orphaned start-docs from old buggy sessions (but not treat-documents) */
     rawDocs.forEach(function (v) {
-      if (v.endTime == null || v.duration == null) {
+      if (v.visitType !== 'treat' && (v.endTime == null || v.duration == null)) {
         deleteDoc(doc(db, 'visits', v.id)).catch(function () {});
       }
     });
@@ -493,6 +536,22 @@ async function stopSuspiciousActivity(charId, startTime) {
 
   var exileMsg = rf(TOAST_MSGS.visitEnd).replace('DURATION', fmtDur(duration));
   showToast('<b>\u{1F6AA} EXILE!</b> "' + chName + '" left after ' + fmtDur(duration) + '.', 'drama');
+}
+
+async function treatCharacter(charId) {
+  /* Log a "treat" visit — instant interaction, not time-based */
+  var chName = ''; for (var i = 0; i < characters.length; i++) { if (characters[i].id === charId) { chName = characters[i].name; break; } }
+
+  await addDoc(collection(db, 'visits'), {
+    characterId: charId,
+    startTime: Timestamp.now(),
+    endTime: null,
+    duration: 0,
+    visitType: 'treat'
+  });
+
+  renderCharacters();
+  showToast('<b>\u{1F389} TREAT LOGGED!</b> Food was brought to "' + chName + '"!', 'success');
 }
 
 async function removeCharacter(charId) {
@@ -551,6 +610,12 @@ $cg.addEventListener('click', async function (e) {
     var act = btn.dataset.act;
     if (act === 'start') await beginSuspiciousActivity(cid);
     else if (act === 'stop') await stopSuspiciousActivity(cid, activeTimers[cid]);
+    return;
+  }
+
+  var treatBtn = e.target.closest('.char-treat-btn');
+  if (treatBtn) {
+    await treatCharacter(treatBtn.dataset.cid);
     return;
   }
 
