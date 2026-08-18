@@ -506,10 +506,6 @@ function listenToCharacters() {
   onSnapshot(collection(db, 'characters'), (snap) => {
     characters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Ensure every character has emoji and color
-    const hasExHunter = characters.some(c => c.emoji === '🌑' || c.name.toLowerCase().includes('ex-hunter'));
-    const hasFrenchMan = characters.some(c => c.emoji === '🇫🇷' || c.name.toLowerCase() === 'le français 🍷');
-
     // Auto-assign emojis/colors if missing
     characters.forEach((ch, i) => {
       const lowerName = ch.name.toLowerCase();
@@ -519,11 +515,6 @@ function listenToCharacters() {
       if (!ch.emoji) ch.emoji = getEmojiForChar(ch.name, i);
       if (!ch.color)  ch.color = randomColor(i + CHARACTERS_CONFIG.length);
     });
-
-    // If no presets exist, create them on-the-fly
-    if (!hasExHunter || !hasFrenchMan) {
-      ensurePresets(characters).catch(console.error);
-    }
 
     renderCharacters();
     renderRankings();
@@ -685,6 +676,37 @@ $visitsBody.addEventListener('click', async (e) => {
 
 document.getElementById('clear-visits-btn').addEventListener('click', clearAllVisits);
 
+// --- Debug helper on window for manual trigger ---
+window.debugFirebase = () => {
+  console.log('Characters in state:', characters);
+  console.log('Visits in state:', visits.length);
+};
+
+function showFallbackError(msg) {
+  if (document.getElementById('fallback-msg')) return; // already shown
+  const el = document.createElement('div');
+  el.id = 'fallback-msg';
+  el.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#1a1a2e;color:#ffbe0b;padding:1rem 2rem;border-radius:14px;font-size:1rem;z-index:9999;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:500px;width:90%;border-left:4px solid #ff006e;line-height:1.5;';
+  el.innerHTML = `
+    <div style="font-family:Bangers,cursive;font-size:1.3rem;margin-bottom:0.5rem;">⚠️ Firebase Connection Issue</div>
+    <div style="color:#ccc;font-size:0.9rem;">${msg}</div>
+    <button id="load-local-btn" style="margin-top:0.75rem;padding:0.6rem 1.2rem;font-size:1rem;border:none;border-radius:8px;background:#ff006e;color:#fff;cursor:pointer;font-weight:bold;">🚀 Load Without Firebase</button>
+  `;
+  document.body.appendChild(el);
+
+  document.getElementById('load-local-btn').addEventListener('click', () => {
+    el.remove();
+    for (const cfg of CHARACTERS_CONFIG.slice()) {
+      const id = 'local-' + Math.random().toString(36).substr(2, 9);
+      characters.push({ id, name: cfg.emoji === '🌑' ? 'The Ex-Hunter 🌑' : 'Le Français 🍷', emoji: cfg.emoji, color: cfg.color });
+    }
+    renderCharacters();
+    renderRankings();
+    updateChartFilters();
+    fancyToast('🎭 Local presets loaded! Works offline but won\'t sync across browsers.', 'success');
+  });
+}
+
 // --- Init ---
 
 async function init() {
@@ -709,24 +731,43 @@ async function init() {
     }
   }, 1000);
 
+  // Wait for onSnapshot to settle, then check Firestore
+  setTimeout(async () => {
+    try {
+      const snap = await getDocs(collection(db, 'characters'));
+      console.log('✅ Firestore got', snap.size, 'documents');
+    } catch (err) {
+      console.error('❌ Firebase error:', err);
+      showFallbackError(
+        'Could not connect to Firebase.<br>' +
+        '<strong>Check your browser console (F12) for details.</strong><br><br>' +
+        'This usually means Firestore Rules need to allow unauthenticated access.<br>' +
+        'Paste this into <a href="https://console.firebase.google.com/project/test-cd485/firestore/rules" target="_blank">Firestore Rules page</a>:<br>' +
+        '<code style="display:block;background:#0f0c29;padding:0.5rem;border-radius:6px;margin-top:0.3rem;word-break:break-all;">allow read, write: if true;</code><br>'+
+        '...or just click "Load Without Firebase" below.'
+      );
+    }
+  }, 2000);
+
   // If no characters exist yet, auto-add the preset hunters
   try {
     const snap = await getDocs(collection(db, 'characters'));
     if (snap.empty) {
       for (const cfg of CHARACTERS_CONFIG.slice()) {
-        await addDoc(collection(db, 'characters'), {
+        const docSnap = await addDoc(collection(db, 'characters'), {
           name: cfg.emoji === '🌑' ? 'The Ex-Hunter 🌑' :
                 cfg.emoji === '🇫🇷' ? 'Le Français 🍷',
           emoji: cfg.emoji,
           color: cfg.color,
         });
+        console.log('Created character:', docSnap.id);
       }
       fancyToast('🎭 Welcome to <strong>New Bae Watch</strong>. The suspects are in position.<br><em>Time to find out who\'s really dedicated.</em>', 'drama');
     } else {
       console.log(`Loaded ${snap.docs.length} characters from Firestore`);
     }
   } catch (err) {
-    console.error('Initial data error:', err.message);
+    console.error('Initial data Firebase error:', err.message || err);
   }
 }
 
