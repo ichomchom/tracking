@@ -104,7 +104,15 @@ section h2 {
   transition: transform 0.15s, box-shadow 0.15s;
 }
 
-.char-card:hover { transform: translateY(-4px); }
+.char-card:hover { transform: translateY(-4px) }
+
+.char-card.shadow-theme {
+  background: linear-gradient(180deg, #111, #1a1a2e);
+  border-color: #33333366;
+  box-shadow: 0 0 30px #00000088, inset 0 0 40px #00000044;
+}
+
+.char-card.shadow-theme .emoji { text-shadow: 0 0 20px #000000aa; }
 
 .char-card .emoji { font-size: 3.5rem; margin-bottom: 0.3rem; }
 .char-card .name { font-size: 1.4rem; font-weight: bold; margin-bottom: 0.5rem; }

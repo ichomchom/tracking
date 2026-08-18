@@ -19,9 +19,8 @@ const db = getFirestore(app);
 
 // --- Constants ---
 const CHARACTERS_CONFIG = [
-  { emoji: "😏", color: "#ff006e" },       // The Ex-Hunter
-  { emoji: "🇫🇷", color: "#8338ec" },      // Le Français (French flag colors)
-  { emoji: "👶", color: "#3a86ff" },        // New Bae
+  { emoji: "🌑", color: "#4a4a4a" },      // The Ex-Hunter (dark shadow)
+  { emoji: "🇫🇷", color: "#0055A4" },     // Le Français (French flag blue)
 ];
 
 const AUTO_COLORS = [
@@ -120,7 +119,10 @@ function renderCharacters() {
 
     if (!existingCardMap.has(ch.id)) {
       const card = document.createElement('div');
-      card.className = 'char-card';
+      let cardClass = 'char-card';
+      if (ch.color === '#4a4a4a' || ch.color === '#333') cardClass += ' shadow-theme';
+
+      card.className = cardClass;
       card.dataset.id = ch.id;
       card.style.borderColor = color + '44';
       card.innerHTML = `
@@ -343,27 +345,15 @@ function renderCharts() {
 // --- Firebase: Characters ---
 
 async function addCharacter(name) {
-  const idx = characters.length;
-  const cfg = CHARACTERS_CONFIG[idx % CHARACTERS_CONFIG.length];
-  let emoji, color;
-
-  // Check if name matches a preset character
-  const predefined = CHARACTERS_CONFIG.find(c => c.emoji === '😏' && name.toLowerCase().includes('ex-hunter'));
-  if (predefined) { emoji = '😏'; color = '#ff006e'; }
-  else {
-    emoji = getEmojiForChar(name, idx);
-    color = cfg.color || randomColor(idx + CHARACTERS_CONFIG.length);
-  }
-
   const docSnap = await addDoc(collection(db, 'characters'), {
     name,
-    emoji,
-    color,
+    emoji: getEmojiForChar(name, characters.length),
+    color: randomColor(characters.length + CHARACTERS_CONFIG.length),
     createdAt: serverTimestamp(),
   });
 
   // Add to local state immediately
-  characters.push({ id: docSnap.id, name, emoji, color });
+  characters.push({ id: docSnap.id, name, emoji: getEmojiForChar(name, characters.length), color: randomColor(characters.length + CHARACTERS_CONFIG.length) });
   renderCharacters();
   renderRankings();
   updateChartFilters();
@@ -399,11 +389,11 @@ function listenToCharacters() {
     characters.forEach((ch, i) => {
       const lowerName = ch.name.toLowerCase();
       if (lowerName.includes('ex-hunter') || lowerName.includes('hunter')) {
-        ch.emoji = '😏';
-        ch.color = '#ff006e';
+        ch.emoji = '🌑';
+        ch.color = '#4a4a4a';
       } else if (lowerName.includes('français') || lowerName.includes('french')) {
         ch.emoji = '🇫🇷';
-        ch.color = '#8338ec';
+        ch.color = '#0055A4';
       }
     });
 
@@ -556,21 +546,20 @@ async function init() {
     }
   }, 1000);
 
-  // If no characters exist yet, auto-add the preset three
+  // If no characters exist yet, auto-add the preset hunters
   let hasChars = false;
   try {
     const snap = await getDocs(collection(db, 'characters'));
     if (snap.empty) {
       for (const cfg of CHARACTERS_CONFIG.slice()) {
         await addDoc(collection(db, 'characters'), {
-          name: cfg.emoji === '😏' ? 'The Ex-Hunter 😏' :
-                cfg.emoji === '🇫🇷' ? 'Le Français 🍷' :
-                'New Bae 👶',
+          name: cfg.emoji === '🌑' ? 'The Ex-Hunter 🌑' :
+                cfg.emoji === '🇫🇷' ? 'Le Français 🍷',
           emoji: cfg.emoji,
           color: cfg.color,
         });
       }
-      showToast('🎭 Welcome! Meet the main characters.');
+      showToast('🎭 Welcome! Two hunters enter the game.');
     }
   } catch (err) {
     console.error('Initial data error:', err);
