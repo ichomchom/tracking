@@ -506,19 +506,47 @@ function listenToCharacters() {
   onSnapshot(collection(db, 'characters'), (snap) => {
     characters = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-    // Match preset emojis/colors by name
-    characters.forEach((ch) => {
+    // Ensure every character has emoji and color
+    const hasExHunter = characters.some(c => c.emoji === '🌑' || c.name.toLowerCase().includes('ex-hunter'));
+    const hasFrenchMan = characters.some(c => c.emoji === '🇫🇷' || c.name.toLowerCase() === 'le français 🍷');
+
+    // Auto-assign emojis/colors if missing
+    characters.forEach((ch, i) => {
       const lowerName = ch.name.toLowerCase();
       if (lowerName.includes('ex-hunter') || lowerName.includes('hunter')) { ch.emoji = '🌑'; ch.color = '#4a4a4a'; }
       else if (lowerName.includes('français') || lowerName.includes('french') || lowerName.includes('france')) { ch.emoji = '🇫🇷'; ch.color = '#0055A4'; }
+
+      if (!ch.emoji) ch.emoji = getEmojiForChar(ch.name, i);
+      if (!ch.color)  ch.color = randomColor(i + CHARACTERS_CONFIG.length);
     });
+
+    // If no presets exist, create them on-the-fly
+    if (!hasExHunter || !hasFrenchMan) {
+      ensurePresets(characters).catch(console.error);
+    }
 
     renderCharacters();
     renderRankings();
     updateChartFilters();
   }, (err) => {
-    console.error('Firestore characters error:', err);
+    console.error('Firestore characters error:', err.message || err);
   });
+}
+
+async function ensurePresets(currentChars) {
+  const hasExHunter = currentChars.some(c => c.emoji === '🌑' || c.name.toLowerCase().includes('ex-hunter'));
+  const hasFrenchMan = currentChars.some(c => c.emoji === '🇫🇷' || c.name.toLowerCase() === 'le français 🍷');
+
+  if (!hasExHunter) {
+    await addDoc(collection(db, 'characters'), {
+      name: 'The Ex-Hunter 🌑', emoji: '🌑', color: '#4a4a4a', createdAt: serverTimestamp(),
+    });
+  }
+  if (!hasFrenchMan) {
+    await addDoc(collection(db, 'characters'), {
+      name: 'Le Français 🍷', emoji: '🇫🇷', color: '#0055A4', createdAt: serverTimestamp(),
+    });
+  }
 }
 
 // --- Firebase: Visits ---
@@ -694,9 +722,11 @@ async function init() {
         });
       }
       fancyToast('🎭 Welcome to <strong>New Bae Watch</strong>. The suspects are in position.<br><em>Time to find out who\'s really dedicated.</em>', 'drama');
+    } else {
+      console.log(`Loaded ${snap.docs.length} characters from Firestore`);
     }
   } catch (err) {
-    console.error('Initial data error:', err);
+    console.error('Initial data error:', err.message);
   }
 }
 
