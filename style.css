@@ -1,7 +1,7 @@
 /* ===== RESET & BASE ===== */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Permanent+Marker&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bangers&display=swap');
 
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -44,7 +44,7 @@ header {
 }
 
 .main-title {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Bangers', cursive;
   font-size: 3.5rem;
   color: #ff006e;
   text-shadow:
@@ -226,8 +226,9 @@ section h2 {
 
 .char-card .emoji { font-size: 3.8rem; margin-bottom: 0.2rem; transition: transform 0.3s; }
 .char-card:hover .emoji { transform: scale(1.15) rotate(5deg); }
+
 .char-card .name {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: 'Bangers', cursive;
   font-size: 1.5rem;
   letter-spacing: 1px;
   margin-bottom: 0.4rem;
@@ -251,10 +252,10 @@ section h2 {
   min-width: 140px;
 }
 
+
 .char-card .card-label {
-  font-size: 0.75rem;
-  color: #666;
-  text-transform: uppercase;
+  font-family: 'Bangers', cursive;
+  font-size: 0.9rem;
   letter-spacing: 2px;
   margin-bottom: 0.3rem;
 }
