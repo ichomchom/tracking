@@ -229,14 +229,20 @@ function renderCharacters() {
 function renderRankings() {
   if (!visits.length) { $rg.innerHTML = '<p class="empty-msg">Time to reveal the truth is not yet...</p>'; return; }
 
-  var stats = characters.map(function (ch) {
+  /* Only show characters that have at least one visit */
+  var charIdsWithVisits = {};
+  visits.forEach(function (v) { charIdsWithVisits[v.characterId] = true; });
+
+  var stats = [];
+  characters.forEach(function (ch) {
+    if (!charIdsWithVisits[ch.id]) return; /* skip chars with no visits */
     var cv = visits.filter(function (v) { return v.characterId === ch.id; });
-    return {
+    stats.push({
       name: ch.name, emoji: ch.emoji, color: ch.color || '#8338ec',
       tc: cv.length, tt: cv.reduce(function (s, v) { return s + (v.duration || 0); }, 0)
-    };
+    });
   });
-  if (!stats.length) return;
+  if (!stats.length) { $rg.innerHTML = '<p class="empty-msg">No visits yet...</p>'; return; }
 
   var maxT = Math.max.apply(null, stats.map(function (s) { return s.tt || 0; })) || 1;
   stats.sort(function (a, b) { return (b.tt || 0) - (a.tt || 0); });
@@ -300,24 +306,35 @@ function renderVisitLog(filterId) {
 
 function renderCharts() {
   if (!characters.length) return;
-  var labels = characters.map(function (c) { return c.name; });
+
+  /* Compute active chars — same filter as renderRankings */
+  var charIdsWithVisits = {};
+  visits.forEach(function (v) { charIdsWithVisits[v.characterId] = true; });
+  statsCache = [];
+  characters.forEach(function (ch) {
+    if (!charIdsWithVisits[ch.id]) return;
+    var cv = visits.filter(function (v) { return v.characterId === ch.id; });
+    statsCache.push({
+      name: ch.name, emoji: ch.emoji, color: ch.color || '#8338ec',
+      tc: cv.length, tt: cv.reduce(function (s, v) { return s + (v.duration || 0); }, 0)
+    });
+  });
 
   /* Bar Chart */
   if (chartsObj.bar) chartsObj.bar.destroy();
-  var barVals = characters.map(function (ch) {
-    var vals = visits.filter(function (v) { return v.characterId === ch.id && v.duration; });
-    return vals.reduce(function (s, v) { return s + v.duration; }, 0) / 60000; /* minutes */
+  var barVals = statsCache.map(function (s) {
+    return parseFloat((s.tt / 60000).toFixed(2));
   });
 
   chartsObj.bar = new Chart(document.getElementById('barChart'), {
     type: 'bar',
     data: {
-      labels: labels,
+      labels: statsCache.map(function (s) { return s.name; }),
       datasets: [{
         label: 'Minutes in Proximity',
         data: barVals,
-        backgroundColor: characters.map(function (c) { return (c.color || '#8338ec') + 'aa'; }),
-        borderColor: characters.map(function (c) { return c.color || '#8338ec'; }),
+              backgroundColor: statsCache.map(function (c) { return (c.color || '#8338ec') + 'aa'; }),
+        borderColor: statsCache.map(function (c) { return c.color || '#8338ec'; }),
         borderWidth: 2, borderRadius: 10
       }]
     },
@@ -333,17 +350,14 @@ function renderCharts() {
 
   /* Donut Chart */
   if (chartsObj.donut) chartsObj.donut.destroy();
-  var donutData = characters.map(function (ch) {
-    return visits.filter(function (v) { return v.characterId === ch.id; }).length;
-  });
 
   chartsObj.donut = new Chart(document.getElementById('donutChart'), {
     type: 'doughnut',
     data: {
-      labels: labels,
+      labels: statsCache.map(function (s) { return s.name; }),
       datasets: [{
-        data: donutData,
-        backgroundColor: characters.map(function (c) { return (c.color || '#8338ec') + 'cc'; }),
+        data: statsCache.map(function (s) { return s.tc; }),
+        backgroundColor: statsCache.map(function (c) { return (c.color || '#8338ec') + 'cc'; }),
         borderColor: '#1a1a2e', borderWidth: 4
       }]
     },
@@ -435,35 +449,32 @@ function listenToCharacters() {
   }, function (err) { console.error('Chars snapshot error:', err.message || err); });
 }
 
-function listenToVisits() {
+async function listenToVisits() {
   onSnapshot(query(collection(db, 'visits'), orderBy('startTime', 'desc')), function (snap) {
-    visits = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
+    var rawDocs = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
 
-    /* Restore ongoing timers from page reload */
-    visits.forEach(function (v) {
-      if (!v.endTime && !activeTimers[v.characterId]) {
-        activeTimers[v.characterId] = new Date(v.startTime).getTime();
-      }
-    });
+    /* Keep only complete visits — real startTime + endTime + duration */
+    visits = rawDocs.filter(function (v) { return v.endTime != null && v.duration != null; });
 
     renderCharacters();
     renderVisitLog($flt.value);
     renderRankings();
     renderCharts();
+
+    /* Delete any orphaned start-docs — old buggy entries from previous sessions */
+    rawDocs.forEach(function (v) {
+      if (v.endTime == null || v.duration == null) {
+        deleteDoc(doc(db, 'visits', v.id)).catch(function () {});
+      }
+    });
   }, function (err) { console.error('Visits snapshot error:', err.message || err); });
 }
 
 async function beginSuspiciousActivity(charId) {
+  /* Store in local memory only — no Firestore write on start */
   activeTimers[charId] = Date.now();
 
   var chName = ''; for (var i = 0; i < characters.length; i++) { if (characters[i].id === charId) { chName = characters[i].name; break; } }
-
-  await addDoc(collection(db, 'visits'), {
-    characterId: charId,
-    startTime: Timestamp.fromDate(new Date(activeTimers[charId])),
-    endTime: null,
-    duration: null
-  });
 
   renderCharacters();
   showToast('<b>\u{1F6A8} CODE RED</b> -- "' + chName + '" is moving in! \u{1f3c3}\uFE0F', 'drama');
