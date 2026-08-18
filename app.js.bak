@@ -437,10 +437,7 @@ function listenToCharacters() {
 
 function listenToVisits() {
   onSnapshot(query(collection(db, 'visits'), orderBy('startTime', 'desc')), function (snap) {
-    var rawDocs = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
-
-    /* Keep only complete visits — those with both endTime and duration */
-    visits = rawDocs.filter(function (v) { return v.endTime != null && v.duration != null; });
+    visits = snap.docs.map(function (d) { return { id: d.id, ...d.data() }; });
 
     /* Restore ongoing timers from page reload */
     visits.forEach(function (v) {
@@ -453,13 +450,6 @@ function listenToVisits() {
     renderVisitLog($flt.value);
     renderRankings();
     renderCharts();
-
-    /* Delete orphaned start-docs from old buggy sessions */
-    rawDocs.forEach(function (v) {
-      if (v.endTime == null || v.duration == null) {
-        deleteDoc(doc(db, 'visits', v.id)).catch(function () {});
-      }
-    });
   }, function (err) { console.error('Visits snapshot error:', err.message || err); });
 }
 
@@ -468,7 +458,12 @@ async function beginSuspiciousActivity(charId) {
 
   var chName = ''; for (var i = 0; i < characters.length; i++) { if (characters[i].id === charId) { chName = characters[i].name; break; } }
 
-  /* No Firestore write on start — only store in local memory */
+  await addDoc(collection(db, 'visits'), {
+    characterId: charId,
+    startTime: Timestamp.fromDate(new Date(activeTimers[charId])),
+    endTime: null,
+    duration: null
+  });
 
   renderCharacters();
   showToast('<b>\u{1F6A8} CODE RED</b> -- "' + chName + '" is moving in! \u{1f3c3}\uFE0F', 'drama');
