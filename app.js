@@ -123,6 +123,20 @@ function buildStreak(visitsForChar) {
   return '';
 }
 
+/* --- Tier System: titles upgrade based on total visit time --- */
+
+function buildTier(totalMs) {
+  var m = Math.floor(totalMs / 60000);  // minutes of total visit time for this character
+  if (m >= 480)   return { label: 'THE WEDDING PLANNER', emoji: '\u{1F470}', color: '#e53935' };
+  if (m >= 300)   return { label: 'HAS THEIR OWN KEYCARD NOW', emoji: '\ud83d\udd11', color: '#c77dff' };
+  if (m >= 180)   return { label: 'NEVER LEAVES HER SIDE AGAIN', emoji: '\u{1F4AC}', color: '#ffd54f' };
+  if (m >= 90)    return { label: 'COLLECTING STUFF FOR A ROOM OF THEIRS', emoji: '\ud83d\ude07', color: '#ffb74d' };
+  if (m >= 45)    return { label: 'KNOWN AS "DESK-MATE" (NOT CO-WORKER)', emoji: '\u{1F60E}', color: '#7b2d8e' };
+  if (m >= 20)    return { label: 'STALKER', emoji: '\U0001f440', color: '#90005e' };
+  if (m >= 10)    return { label: 'HOVERER', emoji: '\u{1F60E}', color: '#c77dff' };
+  return { label: 'THE SUSPECT', emoji: '\U0001f575\ufe0f', color: '#8338ec' };
+}
+
 /* ---- RENDER CHARACTERS ---- */
 
 function renderCharacters() {
@@ -146,18 +160,24 @@ function renderCharacters() {
       card.dataset.cid = ch.id;
 
       var badgeTxt = isActive ? '\u{1F534} ACTIVE' : '\u26AA IDLE';
+
+      /* Calculate tier from actual visit data */
+      var cVisits = visits.filter(function (v) { return v.characterId === ch.id; });
+      var totalMs = cVisits.reduce(function (s, v) { return s + (v.duration || 0); }, 0);
+      var tierInfo = buildTier(totalMs);
+
       var html = '';
       html += '<span class="status-badge">' + badgeTxt + '</span>';
       html += '<div class="emoji">' + em + '</div>';
       html += '<div class="name" style="color:' + col + '">' + ch.name + '</div>';
-      html += '<div class="card-label">THE SUSPECT</div>';
-      html += '<div class="running-stat">Visits: 0 | Time: 0m</div>';
+      html += '<div class="card-label" id="ctl-' + ch.id + '" style="color:' + tierInfo.color + '">' + tierInfo.emoji + ' ' + tierInfo.label + '</div>';
+      html += '<div class="running-stat">Visits: ' + cVisits.length + ' | Time: ' + fmtDur(totalMs) + '</div>';
       html += '<div class="timer-display" id="tmr-' + ch.id + '" style="color:' + col + '">--:--</div>';
-      
+
       var actionBtn = isActive ? 'stop' : 'start';
       var btnLabel = isActive ? rf(['STOP BEING SUSPICIOUS', 'EXIT THE BUILDING', 'ABORT']) : 'START SUSPICIOUS ACTIVITY';
       html += '<button class="char-action-btn" data-cid="' + ch.id + '" data-act="' + actionBtn + '" style="background:' + col + '">' + btnLabel + '</button>';
-      
+
       html += '<div class="streak-info"></div>';
       html += '<div class="card-footer"><button class="remove-btn" data-cid="' + ch.id + '">\u{1f5d1}\uFE0F Discharge</button></div>';
 
@@ -194,6 +214,12 @@ function renderCharacters() {
 
       var streakEl = card.querySelector('.streak-info');
       if (streakEl && cVisits.length > 0) streakEl.textContent = buildStreak(cVisits);
+
+      /* update tier */
+      var newTier = buildTier(totalMs);
+      var labelEl = document.getElementById('ctl-' + ch.id);
+      if (labelEl) labelEl.innerHTML = newTier.emoji + ' ' + newTier.label;
+      if (labelEl) labelEl.style.color = newTier.color;
     }
   });
 }
@@ -219,7 +245,6 @@ function renderRankings() {
   stats.forEach(function (s) {
     var pct = Math.round((s.tt / maxT) * 100);
     var roastTxt = buildRoast(s.tt);
-
     if (pct > 50) html += '<div class="crown" style="font-size:2.5rem;text-align:center;">\u{1F451}</div>';
 
     var row = '<div class="rank-card" style="border-top:4px solid ' + s.color + '">';
@@ -390,7 +415,6 @@ async function addCharacter(name) {
   renderRankings();
   updateFilterOptions();
 
-  var greetMsg = rf(TOAST_MSGS.addChar);
   showToast('<b>' + name.toUpperCase() + '</b> joined the operation!', 'success');
 }
 
@@ -488,7 +512,6 @@ async function removeCharacter(charId) {
 async function deleteVisit(visitId) {
   try {
     await deleteDoc(doc(db, 'visits', visitId));
-    console.log('Evidence erased.');
   } catch (e) {}
   showToast('One piece of evidence erased. Rumors remain.');
 }
