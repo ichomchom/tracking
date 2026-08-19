@@ -331,6 +331,26 @@ section h2 {
 
 .char-card button.treat-btn:hover { transform: scale(1.1); }
 
+.char-card .treatment-tier {
+  font-family: 'Bangers', cursive;
+  font-size: 0.8rem;
+  letter-spacing: 1.5px;
+  margin-top: 0.3rem;
+  text-align: center;
+}
+
+.char-card .treat-roast {
+  font-size: 0.72rem;
+  color: #666;
+  margin-top: 0.5rem;
+  padding: 0.4rem;
+  background: #0f0c29;
+  border-radius: 8px;
+  text-align: center;
+  font-style: italic;
+  line-height: 1.3;
+}
+
 /* ===== STATS / RANKINGS ===== */
 .rankings-grid {
   display: grid;

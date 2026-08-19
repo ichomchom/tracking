@@ -123,6 +123,33 @@ function buildStreak(visitsForChar) {
   return '';
 }
 
+/* --- Bribery Tier System: titles upgrade based on treat count --- */
+
+function buildTreatment(count) {
+  if (count >= 50)   return { label: 'CIA DIRECTOR NOW', emoji: '\u{1F575}\uFE0F', color: '#e53935' };
+  if (count >= 30)   return { label: '$14B INVESTMENT DEAL INCOMING', emoji: '\ud83d\udcb0', color: '#ffd600' };
+  if (count >= 20)   return { label: 'STATE SANCTIONS IMMINENT', emoji: '\u{1F6A9}', color: '#ef476f' };
+  if (count >= 15)   return { label: 'POLITICAL CONSULTANT', emoji: '\ud83c\udfdb', color: '#ffbe0b' };
+  if (count >= 10)   return { label: 'ACTIVE LOBBYING', emoji: '\uD83D\uDCDE', color: '#7b2d8e' };
+  if (count >= 5)    return { label: 'COFFEE MONEY LAUNDERER', emoji: '\u{1F375}', color: '#ef476f' };
+  if (count >= 3)    return { label: 'PAPERCLIP DIPLOMACY', emoji: '\u{1F4CE}', color: '#06d6a0' };
+  return { label: 'STILL LEARNING NAMES?', emoji: '\u{1F937}', color: '#aaa' };
+}
+
+function buildTreatRoast(count) {
+  if (count >= 50)  return '\u{1F575}\uFE0F The UN has opened an inquiry. Her desk is now diplomatic territory.';
+  if (count >= 40)  return '\ud83d\udd25 She accepted your bribe and promoted herself to VP of Vibes.';
+  if (count >= 30)  return '\ud83d\udcb0 Your treats are now traded on the snack futures exchange.';
+  if (count >= 25)  return '\ud83d\udcf0 Bloomberg ran a cover: "How Cookie Bribery Created A Fortune 500."';
+  if (count >= 20)  return '\u{1F6AC} She now has a "Treat Fund" account on the company expense report.';
+  if (count >= 15)  return '\u{1F483} HR tried to stop you. You bribed HR with MORE treats. It worked.';
+  if (count >= 10)  return '\ud83d\uded2 There is a treat market now. Futures trading, even.';
+  if (count >= 7)   return '\u{1F4D8} The intern started charging admission to watch you give treats.';
+  if (count >= 5)   return '🍪 Your cookies are the office currency for Q3.';
+  if (count >= 3)   return '\ud83c\udf6a She mentioned your name in a meeting. Bribery progress: 4/10.';
+  return '☕️ Still one treat away from being the office mom.';
+}
+
 /* --- Tier System: titles upgrade based on total visit time --- */
 
 function buildTier(totalMs) {
@@ -179,8 +206,11 @@ function renderCharacters() {
       html += '<button class="char-action-btn" data-cid="' + ch.id + '" data-act="' + actionBtn + '" style="background:' + col + '">' + btnLabel + '</button>';
 
       var treatCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
+      var treatment = buildTreatment(treatCount);
       html += '<div class="streak-info"></div>';
       html += '<div class="treat-area"><span class="treat-count" id="trt-' + ch.id + '">🍪x' + treatCount + '</span> <button class="treat-btn" data-cid="' + ch.id + '" style="background:' + col + '">🍪 Treat</button></div>';
+      html += '<div class="treatment-tier" id="ttl-' + ch.id + '" style="color:' + treatment.color + '">' + treatment.emoji + ' ' + treatment.label + '</div>';
+      html += '<div class="treat-roast" id="trn-' + ch.id + '">' + buildTreatRoast(treatCount) + '</div>';
       html += '<div class="card-footer"><button class="remove-btn" data-cid="' + ch.id + '">\u{1f5d1}\uFE0F Discharge</button></div>';
 
       card.innerHTML = html;
@@ -227,6 +257,12 @@ function renderCharacters() {
       var tCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
       var trtEl = document.getElementById('trt-' + ch.id);
       if (trtEl) trtEl.textContent = '🍪x' + tCount + '🍪';
+
+      var ttlEl = document.getElementById('ttl-' + ch.id);
+      if (ttlEl) { var tier = buildTreatment(tCount); ttlEl.innerHTML = tier.emoji + ' ' + tier.label; ttlEl.style.color = tier.color; }
+
+      var trnEl = document.getElementById('trn-' + ch.id);
+      if (trnEl) trnEl.textContent = buildTreatRoast(tCount);
     }
   });
 }
@@ -601,6 +637,12 @@ function listenToTreats() {
       var treatCount = treats.filter(function (t) { return t.characterId === ch.id; }).length;
       var trtEl = document.getElementById('trt-' + ch.id);
       if (trtEl) trtEl.textContent = '🍪x' + treatCount + '🍪';
+
+      var ttlEl = document.getElementById('ttl-' + ch.id);
+      if (ttlEl) { var tier = buildTreatment(treatCount); ttlEl.innerHTML = tier.emoji + ' ' + tier.label; ttlEl.style.color = tier.color; }
+
+      var trnEl = document.getElementById('trn-' + ch.id);
+      if (trnEl) trnEl.textContent = buildTreatRoast(treatCount);
     });
 
     renderTreatChart();
